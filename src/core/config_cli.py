@@ -81,7 +81,7 @@ CONTEXT_FLAGS: tuple[CLIField, ...] = (
 META_FLAGS: tuple[CLIField, ...] = (
     CLIField("--task", "task", str, "High-level research task description"),
     CLIField("--max-depth", "max_tree_depth", int, "Max tree depth (default: 2; 0=root,1=strategy,2=idea)"),
-    CLIField("--max-cycles", "max_cycles", int, "Target number of arbor cycles (default: 20)"),
+    CLIField("--max-cycles", "max_cycles", int, "Target number of arbor cycles (default: 40)"),
     CLIField("--max-turns", "max_turns", int, "Max ReAct turns for the coordinator (default: 500)"),
     CLIField("--executor-max-turns", "executor_max_turns", int, "Max turns per executor (default: 50)"),
     CLIField("--executor-timeout", "executor_timeout", int, "Timeout per executor in seconds (default: 172800 / 48h)"),

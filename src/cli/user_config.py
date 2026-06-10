@@ -13,7 +13,7 @@ Schema (all fields optional):
             # openai_api: chat          # optional, only for chat-only endpoints
 
     defaults:
-      max_cycles: 3               # CLI default for --max-cycles
+      max_cycles: 40              # CLI default for --max-cycles
       max_turns: 40               # CLI default for --max-turns
 """
 

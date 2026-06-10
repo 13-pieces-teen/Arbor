@@ -354,7 +354,7 @@ class CoordinatorConfig(ProxyModel):
     # Default depth 2 = the intended three levels: 0=root, 1=strategy, 2=idea.
     # Set to None for an unbounded tree (or override via --max-depth / config).
     max_tree_depth: int | None = 2
-    max_cycles: int = 20  # hard cap — enforced in RunExecutor(Parallel)
+    max_cycles: int = 40  # hard cap — enforced in RunExecutor(Parallel)
 
     # ── Executor parameters ──────────────────────────────────────────
     executor_max_turns: int = 50
