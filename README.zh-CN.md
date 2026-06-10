@@ -18,155 +18,117 @@
   <a href="README.md">English</a> | <b>简体中文</b>
 </p>
 
-**Arbor 是一个自主科研智能体，可以把长周期目标转化为持续累积的搜索过程。** 给它一个基准
-（benchmark）和一个目标，它会提出假设、修改代码、运行真实实验、从结果中学习，并保留那些在
-留出（held-out）数据上经得起验证的改进。不同于“试一次就忘”的做法，Arbor 会逐步生长出一棵
-**假设树**：每个想法都是一根分支，失败就剪枝，成功就收获；洞见会沿树反向传播，让后续想法
-站在更聪明的起点上。
+**Arbor 是一个自主研究智能体，能够将长期目标转化为持续累积的搜索过程。** 只需给它一个基准和一个目标，它便会自动提出假设、修改代码、运行真实实验、从结果中学习，并保留在留出数据上经过验证的改进。与那些每次都从头开始、忘记历史失败的单次尝试不同，Arbor 会构建一棵**假设树**：每个想法都是一根树枝——失败则剪除，成功则保留——而从中提炼出的洞察会向上反向传播，让后续的想法站在更高的起点上。
 
-更多详细内容欢迎查看我们的[项目主页](https://RUC-NLPIR.github.io/Arbor/)和
-[论文](assets/arbor_paper.pdf)。更详细的使用手册请参见我们的
-[文档](https://RUC-NLPIR.github.io/Arbor/docs/)。🧭 你也可以根据自己的环境与工作流，
-按需选择使用 [CLI 版或 Skill 版](#-cli-版与-skill-版)。
+更多详情，请访问我们的[项目主页](https://ruc-nlpir.github.io/Arbor/)并阅读[论文](https://claude.ai/chat/assets/arbor_paper.pdf)。如需详细的使用说明，请参阅[文档](https://ruc-nlpir.github.io/Arbor/docs/)。🧭 你也可以根据自己的环境和工作流选择使用 [CLI 版本或技能套件版本](https://claude.ai/chat/e7121091-ce2c-4970-a60f-16b54c453729#-cli-与技能套件版本)。
 
 ## 💡 为什么选择 Arbor
 
-* **通用优化能力** —— 无论是 model training、harness engineering，还是 data synthesis，
-  只要任务有明确的优化目标和可衡量的 metric，Arbor 都可以进行优化。
-* **真正可用的智能体** —— Arbor 不只是研究原型；它同时提供原生 CLI runtime 和面向
-  Codex / Claude Code 的 Agent Skill Suite；需要最完整能力时可以使用 CLI，希望在其他
-  coding agent 中复刻 Arbor-style 研究行为时可以加载 skill suite。
-* **面向长程任务的结构化探索** —— 假设树让 Arbor 可以连续运行很久，把探索变成可累积的
-  搜索过程：结果、失败模式和提炼出的洞见都会保存在 Idea Tree 中并向上反向传播，让后续
-  想法站在更聪明的起点上，而不是淹没在滚动日志里。
-* **面向真实实验的纪律** —— Executor 在 dev 划分上迭代，在 held-out test 划分上验证，
-  只有超过可配置阈值的收益才会被合并，从而减少对正在优化的指标过拟合。
-* **隔离且可回退的执行** —— 每个实验都在自己的 git worktree 和独立分支上运行；在你主动
-  合并之前，`main` 分支不会被触碰。
-* **为长实验而设计** —— 长时间训练是 Arbor 的核心能力之一，包括宽裕的超时设置、超时后的
-  部分指标恢复，以及从 smoke、pilot 到 full run 的可选分阶段预算。
-* **灵活的模型和工作流支持** —— Arbor 支持 Anthropic、OpenAI / Responses API，以及通过
-  LiteLLM 接入的 OpenAI 兼容后端，包括 DeepSeek、Gemini、Qwen、vLLM、Ollama 和本地网关。
-* **易于引导和适配** —— 实时终端仪表盘、只读 WebUI、构思/审阅阶段可选的人在回路，以及
-  一行即可切换的领域插件，让你无需修改 Arbor 核心代码也能引导实验。
+- **通用优化能力** — 无论是模型训练、评测工程，还是数据合成，只要有明确的优化目标和可量化的评估指标，Arbor 都能胜任。
+- **真正落地可用的自主科研** — Arbor 不仅是一个研究原型，它同时提供原生 CLI 运行时和适用于 Codex 与 Claude Code 的智能体技能套件。你可以直接使用完整 CLI 以获得最佳效果，也可以在其他编程智能体中加载技能套件来使用。
+- **长期结构化探索** — 假设树框架让 Arbor 能够持续运行，进行累积式搜索：实验结果、失败原因和提炼出的洞察都会保存在想法树中并向上传播，让后续想法越来越聪明，而不是淹没在无尽的上下文滚动里。
+- **严格的实验纪律** — 执行器在开发集上迭代，在留出的测试集上验证，只有超过可配置阈值的改进才会被合并，有效避免对评估指标的过拟合。
+- **隔离且可回滚的执行环境** — 每个实验都在独立的 git 工作树和专属分支上运行，在你主动合并之前，`main` 分支始终不受影响。
+- **专为长时间实验设计** — 长时间训练是一等公民：宽裕的超时设置、超时时的部分指标恢复，以及从小规模烟雾测试到试点运行再到完整运行的可选分阶段预算管理。
+- **灵活的模型与工作流支持** — Arbor 通过 LiteLLM 支持 Anthropic、OpenAI / Responses API 及 OpenAI 兼容后端，包括 DeepSeek、Gemini、Qwen、vLLM、Ollama 和本地网关。
+- **高度可控与可扩展** — 实时终端仪表盘、只读 WebUI、可选的人工审核介入，以及一行配置即可切换的领域插件，让你无需修改 Arbor 核心代码就能灵活调整实验走向。
 
-## 🧩 框架图
+## 🧩 框架原理
 
-<p align="center">
-  <img src="assets/framework.png" alt="Arbor 框架图" width="100%">
-</p>
+<p align="center">   <img src="assets/framework.png" alt="Arbor 框架" width="100%"> </p>
 
-Arbor 由**两个协作智能体**组成：
+Arbor 由**两个协同工作的智能体**组成：
 
-- **Coordinator（协调者）** —— 科研指挥官。它维护想法树（Idea Tree），通过 *arbor cycle*（Arbor 循环）
-  推进搜索，并派发实验。
-- **Executor（执行者）** —— 科研工程师。给定一个想法后，它会忠实实现代码改动，在隔离的 git worktree 中
-  运行实验，并汇报证据。
+- **协调器（Coordinator）** — 研究总监。负责维护想法树、驱动 Arbor 循环并下发实验任务。
+- **执行器（Executor）** — 研究工程师。接收单个想法后，忠实地实现代码变更，在隔离的 git 工作树中运行实验，并汇报实验证据。
 
-二者共同重复一个六步 **Arbor 循环（arbor cycle）**：
+两者共同重复执行六步 **Arbor 循环**：
 
-1. **观察（Observe）** —— Coordinator 重新读取 Idea Tree 中的当前状态，包括活跃前沿、
-   约束、祖先洞见、近期证据和当前最优 artifact。
-2. **构思（Ideate）** —— 它选择一个父节点，并提出若干子假设，用来细化、修正或延展树中
-   已经学到的内容。
-3. **选择（Select）** —— 它从 pending 叶子节点中选出最值得验证的方向，在利用当前最优路线
-   与探索尚未解决的替代方向之间取得平衡。
-4. **派发（Dispatch）** —— 被选中的假设会交给独立的 Executor；Executor 在新的 worktree 中
-   实现该想法，并基于 dev 信号进行评估。
-5. **反向传播（Backpropagate）** —— Arbor 记录每次实验的结果、分数、洞见和分支引用，并把
-   抽象后的经验上推到祖先节点，让后续想法继承。
-6. **决策（Decide）** —— Coordinator 决定合并、剪枝、继续、保持 pending 或停止；涉及合并时，
-   使用 held-out 验证作为准入依据。
+1. **观察（Observe）** — 协调器重新审视想法树，读取当前活跃前沿、约束条件、祖先节点的洞察、近期实验证据及当前最优产物。
+2. **构思（Ideate）** — 选择一个父节点，提出子假设，对树中已有知识进行精化、修正或扩展。
+3. **择优（Select）** — 在当前最优方向与未解决的备选方案之间取得平衡，选出最值得测试的待处理叶节点。
+4. **派发（Dispatch）** — 将选中的假设分发给独立的执行器，执行器在全新工作树中实现并在开发信号上评估。
+5. **反向传播（Backpropagate）** — 记录每个实验的结果、分数、洞察和分支，并将归纳出的经验向上传递给祖先节点和未来的想法。
+6. **决策（Decide）** — 协调器决定是否合并、剪枝、继续探索、将节点置为待定，或终止研究，合并决策以留出集验证为依据。
 
 ## 🎬 演示
 
 https://github.com/user-attachments/assets/49c1a306-d2e9-49d6-9c83-65e38a62df30
 
-## 🚀 CLI 版与 Skill 版
+## 🚀 CLI 与技能套件版本
 
-本仓库提供两种 Arbor 使用方式：
+本仓库提供两种使用 Arbor 的方式：
 
-| 版本 | 位置 | 适合场景 | 推荐程度 |
-| --- | --- | --- | --- |
-| 原生 CLI runtime | Python package 和 `arbor` 命令 | 真实 Arbor 科研运行、长实验、dashboard、checkpoint、executor tools、merge/test discipline、plugins、reports | 推荐。这个路径功能更完整、更可靠，Arbor 效果最好。 |
-| Agent Skill Suite | [`skills/`](skills/README.md) | 在 Codex 或 Claude Code 中复刻 Arbor-style 行为，尤其适合无法运行原生 Arbor runtime 的环境 | 有用的集成层和 fallback，但完整度不如 CLI runtime。 |
+| 版本            | 位置                                                 | 适用场景                                                     | 建议                                                        |
+| --------------- | ---------------------------------------------------- | ------------------------------------------------------------ | ----------------------------------------------------------- |
+| 原生 CLI 运行时 | Python 包及 `arbor` 命令                             | 真实的 Arbor 研究运行、长时间实验、仪表盘、检查点、执行器工具、合并/测试纪律、插件、报告 | **推荐使用**。功能更完整、更可靠，能发挥 Arbor 的最佳性能。 |
+| 智能体技能套件  | [`skills/`](https://claude.ai/chat/skills/README.md) | 在 Codex 或 Claude Code 环境中获得 Arbor 风格的行为，无需运行原生 Arbor 运行时 | 实用的集成层和备用方案，但功能不如 CLI 运行时完整。         |
 
-如果环境允许运行 CLI，请优先使用 CLI。原生 `arbor` runtime 包含完整实现：intake、Research
-Contract、live dashboard、EventBus、checkpoint/resume、executor dispatch、
-受保护的 dev/test 评测纪律、SearchAgent、plugins 和最终报告。
+如果你能运行 CLI，就使用 CLI。原生 `arbor` 运行时包含完整实现：任务摄入、研究合同、实时仪表盘、事件总线、检查点与恢复、执行器派发、受保护的开发/测试评估纪律、搜索智能体、插件和最终报告生成。
 
-仓库根目录下的 [`skills/`](skills/README.md) 是面向 Codex / Claude Code 的
-skill suite。安装后，在 Codex 中调用 `$arbor-research-agent`，或在 Claude Code 中调用
-`/arbor-research-agent`，然后像使用 Arbor 一样描述研究目标。如果目标、指标、数据、
-权限、预算或运行模式不够清楚，skill suite 会先进行 Arbor-style clarification，再加载
-orchestrator 和各阶段 skill。它与 `src/skills/` 中原生 runtime 内部加载的技能不属于同一层级。
+仓库根目录下的 [`skills/`](https://claude.ai/chat/skills/README.md) 目录是一套 Codex/Claude Code 技能套件。安装完成后，在 Codex 中调用 `$arbor-research-agent`，或在 Claude Code 中调用 `/arbor-research-agent`，然后像描述 Arbor 任务一样描述你的研究目标即可。当目标、指标、数据、权限、预算或运行模式不明确时，技能套件会先进行 Arbor 风格的澄清确认，再加载协调器和各阶段技能。该目录与存放在 `src/skills/` 下的内部运行时技能是分开的。
 
----
+------
 
 ## 📦 安装
 
-**环境要求：** Python ≥ 3.10 和 Git。建议使用虚拟环境。
+**环境要求：** Python ≥ 3.10 及 Git。推荐使用虚拟环境。
 
 ```bash
 git clone https://github.com/RUC-NLPIR/Arbor.git
 cd Arbor
 python -m venv .venv && source .venv/bin/activate   # 推荐
-pip install -e .                                    # 或：uv pip install -e .
-arbor doctor                                        # 检查 PATH、git 与 API key
+pip install -e .                                    # 或使用：uv pip install -e .
+arbor doctor                                        # 验证 PATH、git 及 API 密钥
 ```
 
-> 想把命令装到全局？`pipx install -e .` 可以让 `arbor` 在任意目录可用。
-> 文档站可用 `pip install -e ".[docs]" && mkdocs serve` 构建，也可以点击上方 **Docs** 徽章在线阅读。
+> 想要全局命令？使用 `pipx install -e .` 可将 `arbor` 命令安装至全局环境。 若需本地查看文档站点，运行 `pip install -e ".[docs]" && mkdocs serve`，或通过上方的 **Docs** 徽章在线阅读。
 
----
+------
 
-## ⚡ 快速上手
+## ⚡ 快速开始
 
 ```bash
-arbor setup       # 一次性配置 provider / model / base_url / API key
+arbor setup       # 首次使用：配置模型提供商 / 模型 / base_url / API 密钥
 arbor             # 在当前目录启动交互式会话
-arbor doctor      # 诊断安装
+arbor doctor      # 诊断安装状态
 ```
 
-`arbor setup` 会写入 `~/.arbor/config.yaml`，因此日常使用时通常只需直接运行 `arbor`，无需额外参数。
-Arbor 启动后的第一步是一次 **intake 对话**：它会把目标、目标目录、指标、基线、预算、
-dev/test 纪律以及产物路径整理成一屏 **Arbor 研究契约（Research Contract）**。确认之后，
-实时仪表盘会接管整个运行过程。
+`arbor setup` 会将配置写入 `~/.arbor/config.yaml`，此后日常使用直接运行 `arbor` 即可，无需额外参数。Arbor 启动后首先进行一次**任务摄入对话**，将你的目标、目标目录、评估指标、基线、预算、开发/测试纪律和产物路径整理成一份简洁的 **Arbor 研究合同**。确认后，实时仪表盘随即接管。
 
 ```bash
 # 指定基准目录和配置文件
 arbor --cwd ./benchmark --config research_config.yaml
 
-# 启动时直接给出目标；intake 会补全其余信息
-arbor "improve validation score without touching the test split" --cwd ./benchmark
+# 预先提供初始目标，摄入对话会补全其余细节
+arbor "提升验证集分数，不得修改测试集" --cwd ./benchmark
 
-# 小规模试跑
+# 小规模试运行
 arbor --cwd ./benchmark --config research_config.yaml --max-cycles 3
 ```
 
-运行过程中你可以输入 `/status`、`/tree`、`/evidence`、`/branches`、`/cost`、
-`/pause`、`/resume`、`/report` 或 `/abort`。
+运行过程中，你可以随时输入 `/status`、`/tree`、`/evidence`、`/branches`、`/cost`、`/pause`、`/resume`、`/report` 或 `/abort` 来查看状态或控制流程。
 
-### 准备一个基准任务
+### 准备基准
 
-你的目标目录应当包含：
+你的目标目录应包含：
 
-- 一个可运行的评测脚本（例如 `run_eval.py`），
-- 评测数据（最好包含 **dev** 划分和留出的 **test** 划分），以及
-- 一个干净的 git 仓库（没有未提交改动）。
+- 一个可运行的评估脚本（例如 `run_eval.py`），
+- 评估数据（最好区分**开发集**和留出的**测试集**），以及
+- 一个干净的 git 仓库（无未提交的改动）。
 
-一份最小的 `research_config.yaml`：
+一个最简的 `research_config.yaml` 示例：
 
 ```yaml
-# LLM/API 在 `arbor setup` 中配置；项目配置通常只需要写任务和预算。
+# LLM/API 配置由 `arbor setup` 管理；项目配置通常只需指定任务和预算。
 task: >
-  Optimize the agent's accuracy on the benchmark.
-  Do NOT modify the evaluation harness or data files.
+  优化智能体在该基准上的准确率。
+  不得修改评估框架或数据文件。
 
 coordinator:
-  max_cycles: 10          # 要探索的 arbor 循环数
+  max_cycles: 10          # Arbor 循环轮数
   max_depth: 2            # 想法树深度
-  merge_threshold: 5.0    # 合并入主干所需的最小留出提升（%）
+  merge_threshold: 5.0    # 合并到主干所需的留出集最低提升百分比
   ui:
     interaction_mode: review   # auto | direction | review | collaborative
 
@@ -174,163 +136,158 @@ executor:
   max_turns: 100
 ```
 
-包含全部选项、可直接复制的示例见
-[`examples/research_config.example.yaml`](examples/research_config.example.yaml)。
+包含所有选项的完整示例配置文件位于 [`examples/research_config.example.yaml`](https://claude.ai/chat/examples/research_config.example.yaml)。
 
----
+------
 
 ## 🧠 工作原理
 
-### Arbor 循环（the arbor cycle）
+### Arbor 循环
 
-每轮循环包含六个步骤：
-
-```
-① OBSERVE   分析当前结果和失败模式
-② IDEATE    基于分析结果和树中洞见，提出 1–3 个新想法
-③ SELECT    选出优先级最高的想法进行验证
-④ DISPATCH  派一个 Executor 在隔离的 git worktree 中执行
-⑤ BACKPROP  记录结果，并把洞见抽象后上推到祖先节点
-⑥ DECIDE    继续 / 合并入主干 / 剪枝 / 停止
-```
-
-### 想法树（the Idea Tree）
+每轮循环执行六个步骤：
 
 ```
-ROOT (baseline: 20%)
-├── 1: Retrieval optimization        [insight: "retrieval quality is the bottleneck"]
-│   ├── 1.1: Constraint decomposition + verification   [40%, merged]
-│   ├── 1.2: Periodic re-read injection                [40%, pruned — no net gain]
-│   └── 1.3: Answer-extraction tuning                  [35%, pruned]
-├── 2: Multi-perspective search      [insight: "search scaffolding hurts here"]
-│   └── 2.1: Breadth-first search                      [25%, pruned]
-└── 3: Code-level intervention       [insight: "code-level > prompt-level"]
-    ├── 3.1: Continuation injection                    [70%, merged]
-    └── 3.2: ANSWER-tag extraction                     [45%, done]
+① 观察（OBSERVE）    分析当前结果与失败模式
+② 构思（IDEATE）     基于分析和树中洞察，提出 1–3 个新想法
+③ 择优（SELECT）     选择优先级最高的想法进行测试
+④ 派发（DISPATCH）   在隔离的 git 工作树中运行执行器
+⑤ 反向传播（BACKPROP） 记录结果，将洞察向上抽象至祖先节点
+⑥ 决策（DECIDE）     继续 / 合并到主干 / 剪枝 / 停止
 ```
 
-- **深度 0（根节点）：** 研究目标与全局洞见。
-- **深度 1：** 研究方向（论文标题级别的想法）。
-- **深度 2+：** 具体方法，由 Executor 实现和测试。
+### 想法树
 
-### Git 策略与评测
+```
+ROOT（基线：20%）
+├── 1：检索优化            [洞察："检索质量是瓶颈"]
+│   ├── 1.1：约束分解 + 验证        [40%，已合并]
+│   ├── 1.2：周期性重读注入          [40%，已剪枝 — 无净收益]
+│   └── 1.3：答案抽取调优            [35%，已剪枝]
+├── 2：多视角搜索          [洞察："搜索脚手架在此场景下有害"]
+│   └── 2.1：广度优先搜索            [25%，已剪枝]
+└── 3：代码层干预          [洞察："代码层 > 提示层"]
+    ├── 3.1：续写注入                [70%，已合并]
+    └── 3.2：ANSWER 标签抽取         [45%，已完成]
+```
 
-每个 Executor 都在自己的 worktree 和独立分支上工作。通过验证的改进会合并到本次运行的 `trunk`；
-当你满意后，再把 `trunk` 提升到 `main`（`git merge research/run_xxx/trunk`）。Executor 在
-**dev** 划分上迭代，但只有在**留出 test** 划分上跨过阈值的改动才会被保留，从而避免过拟合。
+- **深度 0（根节点）：** 研究目标与全局洞察。
+- **深度 1：** 研究方向（论文题目级别的想法）。
+- **深度 2+：** 具体方法，由执行器实现并测试。
 
-### 人在回路（Human-in-the-loop）
+### Git 策略与评估
 
-用 `ui.interaction_mode`（或 `--interaction-mode`）选择你希望介入运行的程度：
+每个执行器在专属分支的独立工作树中工作。经过验证的改进会合并到本次运行专属的 `trunk` 分支；只有当你满意时，才将 `trunk` 推入 `main`（`git merge research/run_xxx/trunk`）。执行器在**开发集**上迭代，但一个改动只有在**留出测试集**上超过阈值才会被保留，以防止对评估指标的过拟合。
 
-| 模式 | 行为 |
-| --- | --- |
-| `auto` | 全自动运行。 |
-| `direction` | 在构思阶段询问下一步方向。 |
-| `review` | 在每个节点与 Executor 之前暂停。 |
-| `collaborative` | `direction` + `review`。 |
+### 人工介入
 
-暂停时，你的输入会开启一段与只读 companion agent 的隔离讨论，不会污染 Coordinator 的上下文。
-完整方法见 [`docs/`](docs/index.md)。
+通过 `ui.interaction_mode`（或 `--interaction-mode`）设置你的介入程度：
 
----
+| 模式            | 行为                                   |
+| --------------- | -------------------------------------- |
+| `auto`          | 完全自主运行。                         |
+| `direction`     | 在构思阶段询问你下一步的方向。         |
+| `review`        | 在每个节点和执行器启动前暂停等待确认。 |
+| `collaborative` | `direction` + `review` 的组合。        |
+
+暂停时，你的输入会开启一个与只读伴侣智能体的独立讨论，不会污染协调器的上下文。完整说明请参阅 [`docs/`](https://claude.ai/chat/docs/index.md)。
+
+------
 
 ## ⚙️ 配置
 
-LLM 访问只需通过 `arbor setup` 配置一次（保存到 `~/.arbor/config.yaml`），核心只有一个
-`provider` 字段：`anthropic`、`openai`（包括任何 OpenAI 兼容的 Responses 端点），或
-`litellm`（用于 DeepSeek / Gemini / Qwen / vLLM / Ollama / 本地网关）。key 来自环境变量或配置；
-项目级任务与预算设置放在 `research_config.yaml` 中。完整选项见
-[配置指南](https://RUC-NLPIR.github.io/Arbor/docs/configuration/) 与
-[`examples/research_config.example.yaml`](examples/research_config.example.yaml)。
+通过 `arbor setup` 一次性配置 LLM 访问（存储在 `~/.arbor/config.yaml`），只需填写一个 `provider` 字段——`anthropic`、`openai`（包含任何 OpenAI 兼容的 Responses 端点），或 `litellm`（用于 DeepSeek / Gemini / Qwen / vLLM / Ollama / 本地网关）。API 密钥从环境变量或配置文件中读取；针对具体项目的任务和预算配置则放在 `research_config.yaml` 中。详情请参阅[配置指南](https://ruc-nlpir.github.io/Arbor/docs/configuration/)和 [`examples/research_config.example.yaml`](https://claude.ai/chat/examples/research_config.example.yaml)。
 
----
+------
 
 ## 🧰 CLI 参考
 
-日常使用只需要 `arbor`：
+日常使用只需记住 `arbor`：
 
-| 命令 | 作用 |
-| --- | --- |
-| `arbor` | 启动交互式研究会话。 |
-| `arbor setup` | 配置 provider / model / key → `~/.arbor/config.yaml`。 |
-| `arbor report <session>` | 为过往会话重新渲染 `REPORT.md`。 |
-| `arbor doctor` | 诊断安装、PATH、git 与 API key。 |
-| `arbor version` | 打印已安装版本。 |
+| 命令                     | 功能                                                        |
+| ------------------------ | ----------------------------------------------------------- |
+| `arbor`                  | 启动交互式研究会话。                                        |
+| `arbor setup`            | 配置模型提供商 / 模型 / API 密钥 → `~/.arbor/config.yaml`。 |
+| `arbor report <session>` | 重新渲染某次历史会话的 `REPORT.md`。                        |
+| `arbor doctor`           | 诊断安装状态、PATH、git 及 API 密钥。                       |
+| `arbor version`          | 打印已安装的版本号。                                        |
 
-更底层的入口（`run-research`、`coordinator`、`executor`、`review-research`）保留给调试使用，
-见 [CLI 参考](https://RUC-NLPIR.github.io/Arbor/docs/cli/)。
+底层入口点（`run-research`、`coordinator`、`executor`、`review-research`）保留供调试使用——详见 [CLI 参考文档](https://ruc-nlpir.github.io/Arbor/docs/cli/)。
 
----
+------
 
-## 🔌 插件与技能（Plugins & Skills）
+## 🔌 插件与技能
 
-只需一行配置，就可以把智能体切换到新的领域：评测协议、受保护的数据目录、必需产物以及超时预设
-都由插件提供：
+一行配置即可将智能体切换到新领域——评估协议、受保护的数据目录、必要的输出内容和超时预设均由插件提供：
 
 ```yaml
 plugin: mle_kaggle   # 切换到 Kaggle/MLE 模式
 ```
 
-插件是**一个 YAML 文件**，包含 prompt 注入点、配置覆盖、profiles、生命周期钩子和一份评测契约；
-技能（Skill）则是智能体在运行时按需加载的 **markdown 操作手册**。可直接复制的 Kaggle 配置见
-[`examples/kaggle_config.example.yaml`](examples/kaggle_config.example.yaml)。
+插件是一个 YAML 文件（包含提示注入点、配置覆盖、运行配置、生命周期钩子和评估合同）；技能则是智能体在运行时按需加载的 Markdown 手册。Kaggle 配置的开箱即用示例位于 [`examples/kaggle_config.example.yaml`](https://claude.ai/chat/examples/kaggle_config.example.yaml)。
 
----
+------
 
-## 💾 输出与续跑（Output & Resume）
+## 💾 输出与恢复
 
-每次运行都会在 `.arbor/sessions/` 下写出一个会话目录，包含 `REPORT.md`、`events.jsonl`、
-`run_stats.json`、想法树以及每个实验的产物。运行支持续跑：你可以随时用 `Ctrl+C` 中断，之后用
-`--resume` 继续；Arbor 会重新加载想法树，并从中断处接上。
+每次运行会在 `.arbor/sessions/` 下创建一个会话目录，包含 `REPORT.md`、`events.jsonl`、`run_stats.json`、想法树以及各实验的产物文件。运行支持断点恢复——用 `Ctrl+C` 中断后，稍后使用 `--resume` 继续；Arbor 会重新加载想法树并从中断处继续。
 
 ```bash
 arbor report .arbor/sessions/<run_name>   # 重新渲染历史报告
-arbor --resume --run-name <run_name>      # 继续一次被中断的运行
+arbor --resume --run-name <run_name>      # 继续中断的运行
 ```
 
----
+------
 
 ## 📊 实验结果
 
-Arbor 作为**单一控制器**，在模型训练、harness 工程和数据合成等场景中进行评测；实验中只改变材料、
-目标、评测器和预算。在全部六项任务上，Arbor 都在留出 test 上超过了强单智能体基线。
+Arbor 作为统一控制器，在模型训练、评测工程和数据合成场景下进行了评估——只有数据、目标、评估器和预算不同。在六项任务的留出测试集上，Arbor 均优于强力的单智能体基线。
 
-| 任务 | 方向 | 初始 | Codex | Claude Code | **Arbor** | 增益 |
-| --- | --- | --- | --- | --- | --- | --- |
-| Optimizer Design | steps ↓ | 3325 | 3325 | 3287.5 | **3237.5** | +2.63% |
-| Architecture Design | loss ↓ | 1.098 | 1.083 | 1.033 | **1.028** | +6.38% |
-| Terminal-Bench 2.0 | pass ↑ | 69.81 | 73.59 | 71.70 | **77.36** | +7.55 |
-| BrowseComp | acc ↑ | 45.33 | 50.00 | 53.33 | **67.67** | +22.34 |
-| Search-Agent Data | gap ↑ | 5.00 | 9.00 | 12.00 | **18.00** | +13.0 |
-| Math-Reasoning Data | gap ↑ | 1.04 | 6.25 | 8.33 | **20.83** | +19.79 |
+| 任务               | 优化方向 | 初始值 | Codex | Claude Code | **Arbor**  | 提升   |
+| ------------------ | -------- | ------ | ----- | ----------- | ---------- | ------ |
+| 优化器设计         | 步数 ↓   | 3325   | 3325  | 3287.5      | **3237.5** | +2.63% |
+| 架构设计           | 损失 ↓   | 1.098  | 1.083 | 1.033       | **1.028**  | +6.38% |
+| Terminal-Bench 2.0 | 通过率 ↑ | 69.81  | 73.59 | 71.70       | **77.36**  | +7.55  |
+| BrowseComp         | 准确率 ↑ | 45.33  | 50.00 | 53.33       | **67.67**  | +22.34 |
+| 搜索智能体数据     | 差距 ↑   | 5.00   | 9.00  | 12.00       | **18.00**  | +13.0  |
+| 数学推理数据       | 差距 ↑   | 1.04   | 6.25  | 8.33        | **20.83**  | +19.79 |
 
-在 **MLE-Bench Lite**（GPT-5.5）上，Arbor 达到 **86.36% Any-Medal**（100% 有效提交、95.45%
-高于中位数、77.27% 金牌）。完整协议和消融见[论文](assets/arbor_paper.pdf)。
+在使用 GPT-5.5 的 **MLE-Bench Lite** 上，Arbor 达到了 **86.36% 任意奖牌率**（100% 有效提交，95.45% 超过中位数，77.27% 获得金奖）。完整的实验协议和消融分析请参阅[论文](https://claude.ai/chat/assets/arbor_paper.pdf)。
 
----
+------
 
 ## 🗂️ 项目结构
 
-代码位于 `src/`，以 `research_agent` 包的形式导入。
+代码位于 `src/` 目录下，作为 `research_agent` 包导入。
 
 ```
 src/                 # `research_agent` 包
-├── core/            共享基础设施：ReAct 循环、工具、LLM 提供方、上下文管理
-├── executor/        Executor agent 和 `executor` CLI
-├── coordinator/     Coordinator agent、Idea Tree、orchestrator、coordinator 工具
-├── cli/             `arbor` CLI：intake、实时仪表盘、setup、doctor、config
-├── events/          类型化 event bus 和 payload
+├── core/            共享基础设施：ReAct 循环、工具、LLM 提供商、上下文管理
+├── executor/        执行器智能体及 `executor` CLI
+├── coordinator/     协调器智能体、想法树、编排器、协调器工具
+├── cli/             `arbor` CLI：任务摄入、实时仪表盘、setup、doctor、配置
+├── events/          类型化事件总线与事件载荷
 ├── report/          报告生成
-├── webui/           只读运行监控 Web 服务
-├── plugins/         领域插件（如 mle_kaggle.yaml）
-├── skills/          按需加载的 markdown 操作手册
-├── dashboard.py     HTML dashboard 生成器
+├── webui/           只读运行监控 Web 服务器
+├── plugins/         领域插件（例如 mle_kaggle.yaml）
+├── skills/          按需加载的 Markdown 手册
+├── dashboard.py     HTML 仪表盘生成器
 ├── run.py           `run-research` CLI
 └── review.py        `review-research` CLI
 ```
 
----
+------
+
+## 🙏 致谢
+
+Arbor 构建在优秀的开源项目
+[claw-code](https://github.com/ultraworkers/claw-code) 之上。
+
+claw-code 是 Claude Code 的开源 Rust 复现，为 Arbor CLI 提供了 REPL 框架、
+工具调用基础设施和跨平台编译能力。非常感谢 ultraworkers 团队的出色工作。
+
+🔗 claw-code: https://github.com/ultraworkers/claw-code
+
+------
 
 ## 📚 引用
 
@@ -346,12 +303,12 @@ src/                 # `research_agent` 包
 }
 ```
 
----
+------
 
 ## 📄 许可证
 
-本项目以 [Apache License 2.0](LICENSE) 协议发布。
+本项目基于 [Apache License 2.0](https://claude.ai/chat/LICENSE) 开源发布。
 
----
+------
 
-由中国人民大学高瓴人工智能学院和微软研究院共同打造。
+由中国人民大学高瓴人工智能学院与微软研究院联合构建。

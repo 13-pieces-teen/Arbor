@@ -359,6 +359,20 @@ src/                 # the `research_agent` package
 
 ---
 
+## 🙏 Acknowledgements
+
+Arbor is built on the excellent foundation of
+[claw-code](https://github.com/ultraworkers/claw-code).
+
+claw-code is an open-source Rust reimplementation of Claude Code. It provided
+the REPL framework, tool-calling infrastructure, and cross-platform compilation
+that made Arbor's CLI possible. Huge thanks to the ultraworkers team for their
+outstanding work.
+
+🔗 claw-code: https://github.com/ultraworkers/claw-code
+
+---
+
 ## 📚 Citation
 
 ```bibtex
