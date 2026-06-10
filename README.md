@@ -42,6 +42,28 @@ Arbor runs **two cooperating agents**:
 <tr><td><b>Steer &amp; adapt</b></td><td>A live terminal dashboard and read-only WebUI, optional human-in-the-loop at ideation/review, and one-line domain plugins — no code changes.</td></tr>
 </table>
 
+## CLI And Skill Versions
+
+This repository includes two ways to use Arbor:
+
+| Version | Location | Best for | Recommendation |
+| --- | --- | --- | --- |
+| Native CLI runtime | Python package and `arbor` command | Real Arbor research runs, long experiments, dashboard, checkpoints, executor tools, merge/test discipline, plugins, reports | Recommended. This path is more complete, more reliable, and gives the best Arbor behavior. |
+| Agent Skill Suite | [`skills/`](skills/README.md) | Codex or Claude Code environments where you want Arbor-style behavior without running the native Arbor runtime | Useful integration layer and fallback, but less complete than the CLI runtime. |
+
+If you can run the CLI, use the CLI. The native `arbor` runtime contains the full
+implementation: intake, Research Contract, live dashboard, EventBus,
+checkpoint/resume, executor dispatch, protected dev/test evaluation discipline,
+SearchAgent, plugins, and final report generation.
+
+The repo-root [`skills/`](skills/README.md) directory is a Codex/Claude Code
+skill suite. After installation, invoke `$arbor-research-agent` in Codex or
+`/arbor-research-agent` in Claude Code and describe your research objective as
+you would in Arbor. The skill suite performs Arbor-style clarification first
+when target, metric, data, permissions, budget, or run mode are unclear, then
+loads the orchestrator and phase skills. This is separate from the internal
+runtime skills stored under `src/skills/`.
+
 ---
 
 ## Install

@@ -41,6 +41,25 @@ Arbor 由**两个协作的智能体**组成：
 <tr><td><b>引导与适配</b></td><td>实时终端仪表盘 + 只读 WebUI、在构思/审阅处可选的人在回路，以及一行即切的领域插件——无需改代码。</td></tr>
 </table>
 
+## CLI 版与 Skill 版
+
+本仓库同时包含两种 Arbor 使用方式：
+
+| 版本 | 位置 | 适合场景 | 推荐程度 |
+| --- | --- | --- | --- |
+| 原生 CLI runtime | Python package 和 `arbor` 命令 | 真实 Arbor 科研运行、长实验、dashboard、checkpoint、executor tools、merge/test discipline、plugins、reports | 推荐。这个路径功能更完整、更可靠，Arbor 效果最好。 |
+| Agent Skill Suite | [`skills/`](skills/README.md) | 在 Codex 或 Claude Code 中复刻 Arbor-style 行为，尤其是不运行原生 Arbor runtime 的环境 | 有用的集成层和 fallback，但不如 CLI runtime 完整。 |
+
+如果能运行 CLI，优先使用 CLI。原生 `arbor` runtime 包含完整实现：intake、Research
+Contract、live dashboard、EventBus、checkpoint/resume、executor dispatch、
+受保护的 dev/test 评测纪律、SearchAgent、plugins 和最终报告。
+
+仓库根目录下的 [`skills/`](skills/README.md) 是给 Codex / Claude Code 使用的
+skill suite。安装后，在 Codex 中调用 `$arbor-research-agent`，或在 Claude Code 中调用
+`/arbor-research-agent`，然后像使用 Arbor 一样描述你的研究目标。若目标、指标、数据、
+权限、预算或运行模式不清楚，skill suite 会先做 Arbor-style clarification，再加载
+orchestrator 和各阶段 skill。它与 `src/skills/` 中原生 runtime 内部加载的技能不是同一层东西。
+
 ---
 
 ## 安装
