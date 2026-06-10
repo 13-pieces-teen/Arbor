@@ -43,17 +43,10 @@ Arbor runs **two cooperating agents**:
 
 ## Demo
 
-<p align="center">
-  <a href="https://RUC-NLPIR.github.io/Arbor/#demo">
-    <img src="assets/demo-poster.png" alt="Watch the Arbor demo" width="100%">
-  </a>
-</p>
 
-<p align="center">
-  <i>Arbor running a full research loop — proposing hypotheses, editing code, running experiments, and merging held-out wins.</i>
-  <br>
-  ▶ <a href="https://RUC-NLPIR.github.io/Arbor/#demo">Watch the demo on the project page</a> · <a href="assets/demo.mp4">download the video</a>
-</p>
+https://github.com/user-attachments/assets/49c1a306-d2e9-49d6-9c83-65e38a62df30
+
+
 
 ## CLI And Skill Versions
 
