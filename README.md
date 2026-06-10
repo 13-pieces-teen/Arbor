@@ -44,13 +44,15 @@ Arbor runs **two cooperating agents**:
 ## Demo
 
 <p align="center">
-  <video src="https://RUC-NLPIR.github.io/Arbor/assets/demo/demo.mp4" controls muted width="100%"></video>
+  <a href="https://RUC-NLPIR.github.io/Arbor/#demo">
+    <img src="assets/demo-poster.png" alt="Watch the Arbor demo" width="100%">
+  </a>
 </p>
 
 <p align="center">
   <i>Arbor running a full research loop — proposing hypotheses, editing code, running experiments, and merging held-out wins.</i>
   <br>
-  If the video does not play inline, <a href="assets/demo.mp4">download it</a> or <a href="https://RUC-NLPIR.github.io/Arbor/#demo">watch it on the project page</a>.
+  ▶ <a href="https://RUC-NLPIR.github.io/Arbor/#demo">Watch the demo on the project page</a> · <a href="assets/demo.mp4">download the video</a>
 </p>
 
 ## CLI And Skill Versions
