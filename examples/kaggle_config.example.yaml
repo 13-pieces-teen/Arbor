@@ -13,7 +13,7 @@
 # See docs/plugins.md for how plugins work and how to write your own.
 # ─────────────────────────────────────────────────────────────────────────────
 
-# Select the built-in Kaggle/MLE plugin (research_agent/plugins/mle_kaggle.yaml).
+# Select the built-in Kaggle/MLE plugin (arbor/plugins/mle_kaggle.yaml).
 # Omit `plugin:` for a general, domain-agnostic run.
 plugin: mle_kaggle
 

@@ -1,6 +1,6 @@
 ---
 name: arbor-research-agent
-description: "Public entrypoint for the Arbor/research_agent skill suite. Use when a user wants to run an Arbor-style autonomous research or optimization workflow from a natural-language goal, including initial clarification of objective, target project, data, metric, evaluation, permissions, budget, run mode, and then automatic bootstrapping into arbor-agent-orchestrator and phase skills."
+description: "Public entrypoint for the Arbor skill suite. Use when a user wants to run an Arbor-style autonomous research or optimization workflow from a natural-language goal, including initial clarification of objective, target project, data, metric, evaluation, permissions, budget, run mode, and then automatic bootstrapping into arbor-agent-orchestrator and phase skills."
 ---
 
 # Arbor Research Agent

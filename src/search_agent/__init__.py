@@ -7,7 +7,7 @@ a single final JSON object describing related work + a novelty assessment.
 
 The SearchAgent is *not* invoked directly. The coordinator dispatches it via
 the ``SearchIdeaContext`` / ``SearchIdeaContextParallel`` tools defined in
-``research_agent.coordinator.tools.search_ctx``.
+``arbor.coordinator.tools.search_ctx``.
 """
 
 from .agent import build_search_agent

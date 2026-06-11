@@ -14,7 +14,7 @@ class LoadSkillTool(Tool):
     Skills are static markdown reference documents (e.g., checklists, rubrics,
     domain profiles) that the agent should read at specific decision points
     rather than carrying in its system prompt. The skill registry is built
-    from <package>/skills/*.md plus <cwd>/.research_agent/skills/*.md (the
+    from <package>/skills/*.md plus <cwd>/.arbor/skills/*.md (the
     latter overrides on name collision).
     """
 

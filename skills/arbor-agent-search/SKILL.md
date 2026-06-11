@@ -1,6 +1,6 @@
 ---
 name: arbor-agent-search
-description: "Related-work and novelty annotation phase for Arbor/research_agent. Use after a node has been experimentally validated, especially before merge decisions, to emulate SearchIdeaContext/SearchIdeaContextParallel/SearchStatus, validated-node gating, background SearchAgent behavior, and structured prior-art summaries."
+description: "Related-work and novelty annotation phase for Arbor. Use after a node has been experimentally validated, especially before merge decisions, to emulate SearchIdeaContext/SearchIdeaContextParallel/SearchStatus, validated-node gating, background SearchAgent behavior, and structured prior-art summaries."
 ---
 
 # Arbor Search Agent

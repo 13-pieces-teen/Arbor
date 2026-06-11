@@ -96,7 +96,7 @@ eval_contract:
 ## 随附的范例：`mle_kaggle`
 
 Arbor 随附一个插件 `mle_kaggle`，作为面向 Kaggle / MLE-bench 竞赛的完整范例。它声明了评测契约、
-保护数据与评测框架、要求一个 `submission.csv`，并捆了一份基准预算 profile：
+保护数据与评测框架、要求一个 `submission.csv`，并附带一份基准预算 profile：
 
 ```yaml title="src/plugins/mle_kaggle.yaml (节选)"
 name: mle_kaggle

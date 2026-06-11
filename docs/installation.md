@@ -57,7 +57,7 @@ you:
 
 ```bash
 pipx install -e .                 # run from the cloned Arbor directory
-pipx reinstall research-agent     # upgrade later
+pipx reinstall arbor     # upgrade later
 ```
 
 ## Troubleshooting

@@ -17,7 +17,6 @@ from .orchestrator import CoordinatorOrchestrator
 _GITIGNORE_ENTRIES = (
     ".arbor/",
     ".autoresearch/",
-    ".research_agent/",
     ".coordinator/",
     "results/",
     "cache_old_*/",

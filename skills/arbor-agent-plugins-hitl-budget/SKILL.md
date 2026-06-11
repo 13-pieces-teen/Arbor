@@ -1,6 +1,6 @@
 ---
 name: arbor-agent-plugins-hitl-budget
-description: "Domain adaptation, human-in-the-loop, and budget policy phase for Arbor/research_agent. Use when a run mentions plugins, plugin profiles, mle_kaggle, eval_contract, protected_paths, required_outputs, lifecycle hooks, convergence, budget_policy, RunTraining stages, AskUser, or interaction modes auto/direction/review/collaborative."
+description: "Domain adaptation, human-in-the-loop, and budget policy phase for Arbor. Use when a run mentions plugins, plugin profiles, mle_kaggle, eval_contract, protected_paths, required_outputs, lifecycle hooks, convergence, budget_policy, RunTraining stages, AskUser, or interaction modes auto/direction/review/collaborative."
 ---
 
 # Arbor Plugins, HITL, And Budget

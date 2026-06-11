@@ -44,7 +44,7 @@ export default function Resources() {
               <h2>{zh ? '论文、代码与引用。' : 'Paper, code, and citation.'}</h2>
               <p className="lead" style={{ marginTop: 18 }}>
                 {zh
-                  ? 'Arbor 作为面向自主优化的开源研究系统发布。该报告是一个持续进行项目的活体技术文档。'
+                  ? 'Arbor 作为面向自主优化的开源研究系统发布。作为一个持续进行的项目，本报告会随研究推进不断更新。'
                   : 'Arbor is released as an open-source research system for Autonomous Optimization. The report is a living technical document for an ongoing project.'}
               </p>
               <div className="hero-actions" style={{ justifyContent: 'flex-start', marginTop: 28 }}>

@@ -15,7 +15,7 @@ the LLM. The frontmatter is parsed for registry metadata only.
 
 Discovery order (later overrides earlier on name collision):
   1. Built-in: <package>/skills/*.md
-  2. Project:  <cwd>/.research_agent/skills/*.md
+  2. Project:  <cwd>/.arbor/skills/*.md
 """
 
 from __future__ import annotations
@@ -131,7 +131,7 @@ def build_default_registry(cwd: str, *, disabled: list[str] | set[str] | tuple[s
     pkg_skills = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "skills")
     n_builtin = registry.load_dir(pkg_skills, source="built-in")
     # Project override
-    project_skills = os.path.join(cwd, ".research_agent", "skills")
+    project_skills = os.path.join(cwd, ".arbor", "skills")
     n_project = registry.load_dir(project_skills, source="project")
     for name in disabled:
         registry._skills.pop(str(name), None)

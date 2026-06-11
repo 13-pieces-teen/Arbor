@@ -339,10 +339,10 @@ for full protocols and ablations.
 
 ## 🗂️ Project Structure
 
-The code lives in `src/` and is imported as the `research_agent` package.
+The code lives in `src/` and is imported as the `arbor` package.
 
 ```
-src/                 # the `research_agent` package
+src/                 # the `arbor` package
 ├── core/            Shared infrastructure: ReAct loop, tools, LLM providers, context mgmt
 ├── executor/        Executor agent + `executor` CLI
 ├── coordinator/     Coordinator agent, Idea Tree, orchestrator, coordinator tools

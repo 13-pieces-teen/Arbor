@@ -482,7 +482,7 @@ Examples:
     (log_dir / "run_info.json").write_text(json.dumps(run_info, indent=2))
 
     # ── Build coordinator command ────────────────────────────────
-    cmd = [sys.executable, "-m", "research_agent.coordinator.main", "--cwd", cwd, "-v"]
+    cmd = [sys.executable, "-m", "arbor.coordinator.main", "--cwd", cwd, "-v"]
     cmd += ["--branch-prefix", branch_prefix]
     cmd += ["--trunk-branch", trunk_branch]
     cmd += ["--workspace-dir", str(log_dir)]
@@ -555,7 +555,7 @@ Examples:
             artifacts.append((md / "idea_tree.json", "idea_tree.json"))
             artifacts.append((md / "idea_tree.md", "idea_tree.md"))
             break
-    artifacts.append((cwd_p / ".research_agent" / "experiments.jsonl", "experiments.jsonl"))
+    artifacts.append((cwd_p / ".arbor" / "experiments.jsonl", "experiments.jsonl"))
 
     for src, dst in artifacts:
         if src.exists():
@@ -660,9 +660,9 @@ Examples:
                         Path(os.path.join(cwd, baseline_file)).read_text(encoding="utf-8")
                     ) if os.path.exists(os.path.join(cwd, baseline_file)) else {}
                     score = cache_data.get("baseline_score", "?")
-                    msg = f"research-agent: cache baseline results (score={score})"
+                    msg = f"arbor: cache baseline results (score={score})"
                 except (json.JSONDecodeError, OSError):
-                    msg = "research-agent: cache baseline results"
+                    msg = "arbor: cache baseline results"
                 try:
                     for f in files_to_commit:
                         subprocess.check_call(
@@ -680,7 +680,7 @@ Examples:
             post_dirty = _git("git status --porcelain")
             if post_dirty:
                 # Safety-net cleanup: remove untracked dirs/files that the run may have leaked
-                _cleanup_dirs = [".research_agent", "submissions", "models", "logs", "analysis", "runs", "cache"]
+                _cleanup_dirs = [".arbor", "submissions", "models", "logs", "analysis", "runs", "cache"]
                 _cleanup_files = ["submission.csv"]
                 cleaned = []
                 for d in _cleanup_dirs:

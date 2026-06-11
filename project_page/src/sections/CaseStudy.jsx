@@ -47,11 +47,11 @@ const FINDINGS = {
     {
       n: '02',
       t: '仅靠 prompt 的控制反而退化',
-      d: '结构化信念表、问题分解与人设多样化的智能体耗掉了预算，却没有拓宽有用证据。',
+      d: '结构化信念表、问题分解与采用多样化角色（persona）的智能体消耗了预算，却没有拓宽有用证据。',
     },
     {
       n: '03',
-      t: '赋予越权检索权限突破了天花板',
+      t: '赋予越界检索权限突破了上限',
       d: '一个被允许在候选集之外检索、并受约束-PASS 门控的裁决器，提升了留出准确率。',
     },
   ],
@@ -71,7 +71,7 @@ export default function CaseStudy() {
             <h2>{zh ? '从相关联的检索失败，到一个被工具赋能的裁决器。' : 'From correlated search failures to a tool-empowered judge.'}</h2>
             <p className="lead">
               {zh
-                ? 'Arbor 先后探索了仅靠 prompt 的信念状态修复、对抗式证伪、检索枚举与跨轨迹集成，最终合并了一个带越权权限的裁决器设计——把留出准确率远远推过了强大的单智能体基线。'
+                ? 'Arbor 先后探索了仅靠 prompt 的信念状态修复、对抗式证伪、检索枚举与跨轨迹集成，最终合并了一个允许越界检索（override）的裁决器设计——把留出准确率远远推过了强大的单智能体基线。'
                 : 'Arbor explored prompt-only belief-state fixes, adversarial falsification, retrieval enumeration, and cross-trajectory ensembling before merging a judge-with-override design — lifting held-out accuracy well past strong single-agent baselines.'}
             </p>
           </div>

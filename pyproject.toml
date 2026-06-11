@@ -1,5 +1,5 @@
 [project]
-name = "research-agent"
+name = "arbor"
 version = "0.1.0"
 description = "Arbor — an autonomous research agent that proposes ideas, edits code, runs experiments, and iterates on a hypothesis tree."
 readme = "README.md"
@@ -27,43 +27,43 @@ docs = [
 ]
 
 [project.scripts]
-arbor = "research_agent.cli.app:main"
-executor = "research_agent.executor.main:cli"
-coordinator = "research_agent.coordinator.main:cli"
-run-research = "research_agent.run:cli"
-review-research = "research_agent.review:cli"
+arbor = "arbor.cli.app:main"
+executor = "arbor.executor.main:cli"
+coordinator = "arbor.coordinator.main:cli"
+run-research = "arbor.run:cli"
+review-research = "arbor.review:cli"
 
 [build-system]
 requires = ["setuptools>=77.0"]
 build-backend = "setuptools.build_meta"
 
-# The code lives in `src/` on disk but is imported as the `research_agent`
+# The code lives in `src/` on disk but is imported as the `arbor`
 # package, so we map the package root with `package-dir` and list the
 # sub-packages explicitly (auto-discovery can't rename `src/` -> the import
 # name). Add new sub-packages here when you create them.
 [tool.setuptools]
-package-dir = { "research_agent" = "src" }
+package-dir = { "arbor" = "src" }
 packages = [
-    "research_agent",
-    "research_agent.cli",
-    "research_agent.cli.commands",
-    "research_agent.cli.intake",
-    "research_agent.coordinator",
-    "research_agent.coordinator.tools",
-    "research_agent.core",
-    "research_agent.core.llm",
-    "research_agent.core.tools",
-    "research_agent.core.tools.web",
-    "research_agent.events",
-    "research_agent.events.subscribers",
-    "research_agent.executor",
-    "research_agent.plugins",
-    "research_agent.report",
-    "research_agent.search_agent",
-    "research_agent.webui",
+    "arbor",
+    "arbor.cli",
+    "arbor.cli.commands",
+    "arbor.cli.intake",
+    "arbor.coordinator",
+    "arbor.coordinator.tools",
+    "arbor.core",
+    "arbor.core.llm",
+    "arbor.core.tools",
+    "arbor.core.tools.web",
+    "arbor.events",
+    "arbor.events.subscribers",
+    "arbor.executor",
+    "arbor.plugins",
+    "arbor.report",
+    "arbor.search_agent",
+    "arbor.webui",
 ]
 
 [tool.setuptools.package-data]
-"research_agent" = ["skills/*.md"]
-"research_agent.webui" = ["index.html"]
-"research_agent.plugins" = ["*.yaml", "*.yml"]
+"arbor" = ["skills/*.md"]
+"arbor.webui" = ["index.html"]
+"arbor.plugins" = ["*.yaml", "*.yml"]

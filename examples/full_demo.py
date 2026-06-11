@@ -8,7 +8,7 @@ Usage:
 
 Starts the read-only WebUI server, prints its URL, gives you a few seconds to
 open it in a browser, then mounts the real terminal RunDashboard and replays the
-canned MOCK_SCRIPT (research_agent.events.mock) onto a single EventBus. Because
+canned MOCK_SCRIPT (arbor.events.mock) onto a single EventBus. Because
 the dashboard updates RunState and the WebUI mirrors the same bus, the terminal
 tree/thinking panels and the browser monitor light up from the *same* events —
 no engine, no API key. Looping a few rounds gives you time to watch both.
@@ -23,10 +23,10 @@ from pathlib import Path
 # Make the package importable when running from the repo root.
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from research_agent.cli.run_dashboard import RunDashboard
-from research_agent.cli.run_state import RunState
-from research_agent.events import EventBus
-from research_agent.events.mock import emit_mock_run
+from arbor.cli.run_dashboard import RunDashboard
+from arbor.cli.run_state import RunState
+from arbor.events import EventBus
+from arbor.events.mock import emit_mock_run
 
 
 def _parse_args(argv: list[str]) -> tuple[int | None, int]:
@@ -58,7 +58,7 @@ def main() -> None:
 
     webui = None
     if port is not None:
-        from research_agent.webui import WebUIServer
+        from arbor.webui import WebUIServer
 
         webui = WebUIServer(state, bus, port=port)
         if webui.start():

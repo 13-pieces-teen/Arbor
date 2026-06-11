@@ -43,7 +43,7 @@ def version_command() -> None:
     """Print the installed version."""
     try:
         from importlib.metadata import version as _v
-        ver = _v("research-agent")
+        ver = _v(APP_NAME)
     except Exception:
         ver = "unknown"
     typer.echo(f"{APP_NAME} {ver}")

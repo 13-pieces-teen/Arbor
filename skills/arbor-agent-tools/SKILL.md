@@ -1,6 +1,6 @@
 ---
 name: arbor-agent-tools
-description: "Deterministic helper layer for emulating Arbor/research_agent tools in Codex or Claude Code when native TreeView, TreeAddNode, TreeSetMeta, RunExecutor, GitMergeBranch, or report tooling is unavailable. Use for local state management, eval score capture, executor prompt generation, merge checks, and skill forward tests."
+description: "Deterministic helper layer for emulating Arbor tools in Codex or Claude Code when native TreeView, TreeAddNode, TreeSetMeta, RunExecutor, GitMergeBranch, or report tooling is unavailable. Use for local state management, eval score capture, executor prompt generation, merge checks, and skill forward tests."
 ---
 
 # Arbor Agent Tools

@@ -73,7 +73,7 @@ class Tool(ABC):
 
         # Persist to disk
         persist_root = self.workspace_dir or self.cwd
-        persist_dir = os.path.join(persist_root, ".research_agent", "tool_results")
+        persist_dir = os.path.join(persist_root, ".arbor", "tool_results")
         os.makedirs(persist_dir, exist_ok=True)
         result_id = uuid.uuid4().hex[:12]
         result_path = os.path.join(persist_dir, f"{self.name}_{result_id}.txt")

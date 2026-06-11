@@ -47,7 +47,7 @@ def doctor_command() -> None:
     path_first = shutil.which(APP_NAME)
     if not running and not path_first:
         _fail(f"`{APP_NAME}` not on PATH",
-              "pipx install -e /path/to/research_agent")
+              "pipx install -e /path/to/arbor")
         problems += 1
     else:
         if running:
@@ -81,10 +81,10 @@ def doctor_command() -> None:
 
     # ── package import ───────────────────────────────────────────
     try:
-        import research_agent  # noqa: F401
-        _ok(f"research_agent imports from {Path(research_agent.__file__).parent}")
+        import arbor  # noqa: F401
+        _ok(f"arbor imports from {Path(arbor.__file__).parent}")
     except Exception as e:
-        _fail(f"cannot import research_agent: {e!r}")
+        _fail(f"cannot import arbor: {e!r}")
         problems += 1
 
     # ── git ───────────────────────────────────────────────────────

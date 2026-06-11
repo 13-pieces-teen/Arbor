@@ -4,7 +4,7 @@ Usage:
     python examples/dashboard_demo.py
 
 Renders the real terminal RunDashboard (header, ideas tree, reasoning panel)
-and replays the canned MOCK_SCRIPT from research_agent.events.mock — no engine,
+and replays the canned MOCK_SCRIPT from arbor.events.mock — no engine,
 no API key. Handy for working on the observability surfaces (#6 reasoning panel,
 #7 WebUI) without launching a full research run.
 
@@ -21,10 +21,10 @@ from pathlib import Path
 # Make the package importable when running from the repo root.
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from research_agent.cli.run_dashboard import RunDashboard
-from research_agent.cli.run_state import RunState
-from research_agent.events import EventBus
-from research_agent.events.mock import emit_mock_run
+from arbor.cli.run_dashboard import RunDashboard
+from arbor.cli.run_state import RunState
+from arbor.events import EventBus
+from arbor.events.mock import emit_mock_run
 
 
 def main() -> None:

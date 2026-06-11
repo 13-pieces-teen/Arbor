@@ -19,7 +19,7 @@ arbor doctor
 
 ## 项目结构
 
-源码位于 `src/`，作为 `research_agent` 包被导入：
+源码位于 `src/`，作为 `arbor` 包被导入：
 
 ```text
 src/
@@ -37,7 +37,7 @@ src/
 
 !!! note "打包细节"
     磁盘上的目录是 `src/`，但通过 `pyproject.toml` 里的 `package-dir` 映射，它以
-    `research_agent` 的名字安装和导入。当你新增一个**子包**（一个带 `__init__.py` 的新目录）时，
+    `arbor` 的名字安装和导入。当你新增一个**子包**（一个带 `__init__.py` 的新目录）时，
     把它加进 `pyproject.toml` 里显式的 `packages` 列表，这样它才会随 wheel 一起发布。
 
 ## 参与文档

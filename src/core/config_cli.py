@@ -113,7 +113,7 @@ META_CLI_FLAGS: tuple[CLIField, ...] = (
     *LLM_FLAGS, *TOOL_TIMEOUT_FLAGS, *CONTEXT_FLAGS, *META_FLAGS, *MISC_FLAGS,
 )
 
-#: Full flag set for the standalone executor CLI (`research-agent`).
+#: Full flag set for the standalone executor CLI (`executor`).
 EXECUTOR_CLI_FLAGS: tuple[CLIField, ...] = (
     *LLM_FLAGS, *TOOL_TIMEOUT_FLAGS, *CONTEXT_FLAGS, *EXECUTOR_FLAGS, *MISC_FLAGS,
 )

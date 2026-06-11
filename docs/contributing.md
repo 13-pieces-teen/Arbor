@@ -20,7 +20,7 @@ arbor doctor
 
 ## Project layout
 
-The source lives in `src/` and is imported as the `research_agent` package:
+The source lives in `src/` and is imported as the `arbor` package:
 
 ```text
 src/
@@ -37,7 +37,7 @@ src/
 ```
 
 !!! note "Packaging detail"
-    The on-disk directory is `src/`, but it is installed and imported as `research_agent`
+    The on-disk directory is `src/`, but it is installed and imported as `arbor`
     via a `package-dir` mapping in `pyproject.toml`. When you add a **new sub-package**
     (a new directory with an `__init__.py`), add it to the explicit `packages` list in
     `pyproject.toml` so it ships in the wheel.

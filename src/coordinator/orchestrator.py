@@ -191,7 +191,6 @@ class CoordinatorOrchestrator:
     _GITIGNORE_ENTRIES = (
         ".arbor/",
         ".autoresearch/",  # legacy — keep one release for projects with old session dirs
-        ".research_agent/",
         ".coordinator/",
         "results/",
         "cache_old_*/",
@@ -381,7 +380,7 @@ class CoordinatorOrchestrator:
             f"{agent.total_turns} turns, "
             f"coordinator {agent.total_input_tokens} in / "
             f"{agent.total_output_tokens} out tokens; "
-            f"all research-agent LLM "
+            f"all arbor LLM "
             f"{stats_global.get('total_input_tokens', 0)} in / "
             f"{stats_global.get('total_output_tokens', 0)} out tokens"
         )

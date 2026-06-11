@@ -29,7 +29,7 @@ const ITEMS = {
     {
       n: '02',
       t: '每个实验都让下一个不再随机',
-      d: 'Arbor 最好的候选出现在中后期，以累积的证据为条件。同样的算力买到的是一次更少重复、更受约束的搜索——而不是一场赌运气撞上结果的更长豪赌。',
+      d: 'Arbor 最好的候选出现在中后期，以累积的证据为条件。同样的算力换来的是一次重复更少、约束更强的搜索——而不是一场靠运气碰中结果的更长的盲目尝试。',
     },
     {
       n: '03',
@@ -53,7 +53,7 @@ export default function WhyItMatters() {
               <h2>{zh ? '会复利的自主研究。' : 'Autonomous research that compounds.'}</h2>
               <p className="lead">
                 {zh
-                  ? '在 Arbor 的轨迹中，被排除、被验证，或被证明存在边界条件的东西，都会成为下一个提议的先验。结果是一个让研究累积起来的过程——不是更多次尝试，而是更少重复、更具记忆意识的搜索。'
+                  ? '在 Arbor 的轨迹中，被排除、被验证，或被证明存在边界条件的东西，都会成为下一个提议的先验。结果是一个让研究累积起来的过程——不是更多次尝试，而是重复更少、更具记忆性的搜索。'
                   : "Across Arbor's traces, what gets ruled out, validated, or shown to have boundary conditions becomes a prior on the next proposal. The result is a process that makes research cumulative — not more attempts, but less repetitive, more memory-aware search."}
               </p>
             </div>

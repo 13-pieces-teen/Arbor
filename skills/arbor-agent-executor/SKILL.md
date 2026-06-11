@@ -1,6 +1,6 @@
 ---
 name: arbor-agent-executor
-description: "Executor-dispatch phase for Arbor/research_agent. Use when implementing an Idea Tree node through RunExecutor or RunExecutorParallel semantics: isolated git worktree, executor prompt construction, eval metadata injection, RunTraining policy, smoke/full evaluation, report parsing, artifact persistence, tree update, and insight propagation."
+description: "Executor-dispatch phase for Arbor. Use when implementing an Idea Tree node through RunExecutor or RunExecutorParallel semantics: isolated git worktree, executor prompt construction, eval metadata injection, RunTraining policy, smoke/full evaluation, report parsing, artifact persistence, tree update, and insight propagation."
 ---
 
 # Arbor Executor

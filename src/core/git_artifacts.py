@@ -7,7 +7,7 @@ from fnmatch import fnmatch
 
 DEFAULT_ARTIFACT_PATTERNS: tuple[str, ...] = (
     ".coordinator/**",
-    ".research_agent/**",
+    ".arbor/**",
     "results/**",
     "models/**",
     "logs/**",

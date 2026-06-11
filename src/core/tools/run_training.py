@@ -100,7 +100,7 @@ class RunTrainingTool(Tool):
                 "type": "string",
                 "description": (
                     "Optional path to write full output log. "
-                    "If not set, logs go to .research_agent/training_logs/."
+                    "If not set, logs go to .arbor/training_logs/."
                 ),
             },
             "metric_patterns": {
@@ -176,7 +176,7 @@ class RunTrainingTool(Tool):
         # Set up log file
         if not log_file:
             persist_root = self.workspace_dir or self.cwd
-            log_dir = os.path.join(persist_root, ".research_agent", "training_logs")
+            log_dir = os.path.join(persist_root, ".arbor", "training_logs")
             os.makedirs(log_dir, exist_ok=True)
             log_file = os.path.join(log_dir, f"train_{uuid.uuid4().hex[:8]}.log")
 

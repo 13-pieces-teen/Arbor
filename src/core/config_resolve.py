@@ -10,7 +10,7 @@ scattered across ``config_loader`` and the Typer CLI's ``eff`` dict)::
 Every layer is a plain mapping; they are deep-merged and validated **once** at
 the end by the typed config model, whose ``before`` validators fold flat keys
 into subgroups and coerce structured blocks. Flat (legacy) and nested YAML keys
-are both accepted — see :mod:`research_agent.core.config_schema`.
+are both accepted — see :mod:`arbor.core.config_schema`.
 """
 
 from __future__ import annotations

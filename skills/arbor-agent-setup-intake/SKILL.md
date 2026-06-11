@@ -1,6 +1,6 @@
 ---
 name: arbor-agent-setup-intake
-description: "Setup, intake, preflight, and launch-contract phase for open-source Arbor/research_agent runs. Use when confirming a target project, metric, baseline, dev/test split, config/plugin settings, branch guard, session directory, or when translating a user goal into the precise contract consumed by the coordinator."
+description: "Setup, intake, preflight, and launch-contract phase for open-source Arbor runs. Use when confirming a target project, metric, baseline, dev/test split, config/plugin settings, branch guard, session directory, or when translating a user goal into the precise contract consumed by the coordinator."
 ---
 
 # Arbor Setup And Intake

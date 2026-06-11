@@ -34,7 +34,7 @@ pip install -e .          # 或：uv pip install -e .
     ```
 
 !!! info "为什么用可编辑安装（`-e`）？"
-    Arbor 是活跃开发中的研究软件。可编辑安装让你用 `git pull` 拉更新，而无需重新安装。
+    Arbor 是活跃开发中的研究软件。可编辑安装让你通过 `git pull` 获取更新，而无需重新安装。
 
 ## 验证
 
@@ -53,7 +53,7 @@ Python 上、`git` 是否可用，以及用户配置是否存在。
 
 ```bash
 pipx install -e .                 # 在克隆下来的 Arbor 目录中执行
-pipx reinstall research-agent     # 之后升级
+pipx reinstall arbor     # 之后升级
 ```
 
 ## 故障排查

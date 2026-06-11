@@ -1,7 +1,7 @@
 """Read-only Q&A companion for the live dashboard (#11).
 
 Lets the user ask questions mid-run *without* disturbing the research agent.
-A separate, read-only :class:`~research_agent.core.agent.Agent` is grounded in a
+A separate, read-only :class:`~arbor.core.agent.Agent` is grounded in a
 snapshot of the main agent's conversation — read from the checkpoint's
 ``messages.jsonl`` (member A's #1), served as data — plus read-only tools to
 inspect the live workspace and the research state on demand.

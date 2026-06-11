@@ -15,7 +15,7 @@ from .prompts import build_system_prompt
 
 
 _GITIGNORE_ENTRIES = (
-    ".research_agent/",
+    ".arbor/",
     ".coordinator/",
     "results/",
 )
@@ -123,14 +123,14 @@ async def async_main(config: AgentConfig, idea: str) -> None:
 def cli() -> None:
     """Command-line interface."""
     parser = argparse.ArgumentParser(
-        description="Research Agent — AI-powered codebase optimization",
+        description="Arbor — AI-powered codebase optimization",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""\
 Examples:
-  research-agent --cwd ./my-project --idea "Add dropout regularization to prevent overfitting"
-  research-agent --cwd ./ml-repo --idea "Switch optimizer from SGD to AdamW" --experiment-cmd "python train.py"
-  research-agent --config research_config.yaml --cwd ./project --idea "Improve inference speed"
-  research-agent --cwd ./project --idea "Add caching" --provider openai --model gpt-4o
+  executor --cwd ./my-project --idea "Add dropout regularization to prevent overfitting"
+  executor --cwd ./ml-repo --idea "Switch optimizer from SGD to AdamW" --experiment-cmd "python train.py"
+  executor --config research_config.yaml --cwd ./project --idea "Improve inference speed"
+  executor --cwd ./project --idea "Add caching" --provider openai --model gpt-4o
 """,
     )
 

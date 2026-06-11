@@ -7,8 +7,8 @@ frozen in :mod:`events.types` / :mod:`events.payloads`.
 
 Usage::
 
-    from research_agent.events import EventBus
-    from research_agent.events.mock import emit_mock_run
+    from arbor.events import EventBus
+    from arbor.events.mock import emit_mock_run
 
     bus = EventBus()
     # ... attach your subscribers ...
@@ -42,7 +42,7 @@ MOCK_SCRIPT: list[tuple[str, dict[str, Any]]] = [
     (E.TOOL_END, {"name": "Bash", "ok": True, "duration": 742.0, "output_preview": "val_acc=0.913", "agent": "sub:n1", "node_id": "n1"}),
     (E.EXECUTOR_END, {"node_id": "n1", "score": 0.913, "duration": 760.0, "tokens": 41000}),
     (E.TREE_UPDATED, {"tree_snapshot_path": ".coordinator/idea_tree.json"}),
-    (E.CHECKPOINT_SAVED, {"path": ".research_agent/checkpoint/checkpoint.json", "cycle": 1, "reason": "cycle_end"}),
+    (E.CHECKPOINT_SAVED, {"path": ".arbor/checkpoint/checkpoint.json", "cycle": 1, "reason": "cycle_end"}),
     (E.CYCLE_END, {"cycle_num": 1, "duration": 805.0}),
     (E.SESSION_END, {"duration": 810.0, "exit_reason": "ok", "turns": 12, "input_tokens": 120000, "output_tokens": 8000, "meta_input_tokens": 60000, "meta_output_tokens": 4000}),
 ]

@@ -75,7 +75,7 @@ class GitManager:
     def __init__(
         self,
         cwd: str,
-        branch_prefix: str = "research-agent",
+        branch_prefix: str = "arbor",
         enabled: bool = True,
         idea: str = "",
     ):
@@ -106,7 +106,7 @@ class GitManager:
             if commit_paths:
                 quoted_paths = " ".join(shlex.quote(path) for path in commit_paths)
                 await _run_cmd(f"git add -- {quoted_paths}", self.cwd)
-                await _run_cmd("git commit -m 'research-agent: initial workspace snapshot'", self.cwd)
+                await _run_cmd("git commit -m 'arbor: initial workspace snapshot'", self.cwd)
 
         # Always start from main branch
         # Try 'main' first, then 'master' as fallback

@@ -81,7 +81,7 @@ const BRANCHES = {
       status: 'done',
       label: '运行四条独立轨迹 + 一个择优裁决器',
       children: [
-        { id: '5.1', score: 47.5, status: 'pruned', label: '人设多样化的智能体（每条轨迹一种风格）' },
+        { id: '5.1', score: 47.5, status: 'pruned', label: '多样化角色的智能体（每条轨迹一种风格）' },
         { id: '5.2', score: 57.5, status: 'done', label: '给裁决器自己的 8 次检索预算' },
         { id: '5.3', score: 52.5, status: 'done', label: '修复"Candidate N"答案解析器的 bug' },
         {

@@ -1,6 +1,6 @@
 ---
 name: arbor-agent-merge-eval
-description: "Merge and evaluation discipline for Arbor/research_agent. Use for TreeSetMeta metadata, B_dev/B_test separation, eval command templates, score parsing, GitMergeBranch behavior, protected paths, required outputs, metric_direction, trunk/test score updates, medal detection, and final evaluation before stopping."
+description: "Merge and evaluation discipline for Arbor. Use for TreeSetMeta metadata, B_dev/B_test separation, eval command templates, score parsing, GitMergeBranch behavior, protected paths, required outputs, metric_direction, trunk/test score updates, medal detection, and final evaluation before stopping."
 ---
 
 # Arbor Merge And Eval

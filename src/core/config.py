@@ -1,7 +1,7 @@
 """Configuration for the research (sub-)agent.
 
 ``AgentConfig`` is a typed pydantic model composed of the shared subgroups
-defined in :mod:`research_agent.core.config_schema` (``llm`` / ``timeout`` /
+defined in :mod:`arbor.core.config_schema` (``llm`` / ``timeout`` /
 ``context``) plus the fields specific to a single agent run. Legacy flat
 keyword construction and ``config.<flat_name>`` reads keep working via the
 ``ProxyModel`` machinery, so existing call sites are untouched.
@@ -47,7 +47,7 @@ class AgentConfig(ProxyModel):
     run_training_stage_timeouts: dict[str, int] = Field(default_factory=dict)
     budget_policy_summary: str | None = None
     auto_git: bool = True  # auto-commit after file changes
-    git_branch_prefix: str = "research-agent"
+    git_branch_prefix: str = "arbor"
     idea: str = ""  # the research idea (used for branch naming)
 
     # ── Logging ──────────────────────────────────────────────────────
@@ -87,11 +87,12 @@ class AgentConfig(ProxyModel):
 
     @property
     def agent_dir(self) -> Path:
-        """Directory for agent artifacts (.research_agent/)."""
+        """Directory for agent artifacts (.arbor/)."""
+        from .._app import CONFIG_DIR_NAME
         if self.workspace_dir:
-            d = Path(self.workspace_dir) / ".research_agent"
+            d = Path(self.workspace_dir) / CONFIG_DIR_NAME
         else:
-            d = self.cwd_path / ".research_agent"
+            d = self.cwd_path / CONFIG_DIR_NAME
         d.mkdir(parents=True, exist_ok=True)
         return d
 

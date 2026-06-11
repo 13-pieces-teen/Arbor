@@ -19,9 +19,9 @@ from pathlib import Path
 # Make the package importable when running from repo root
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from research_agent.events import EventBus
-from research_agent.events import types as ev
-from research_agent.coordinator.idea_tree import IdeaTree, Node
+from arbor.events import EventBus
+from arbor.events import types as ev
+from arbor.coordinator.idea_tree import IdeaTree, Node
 
 
 def make_event_printer(bus: EventBus) -> None:

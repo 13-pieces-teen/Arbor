@@ -1,6 +1,6 @@
 ---
 name: arbor-agent-orchestrator
-description: "Top-level controller for recreating the open-source AutoResearch/research_agent workflow as a suite of skills. Use when the user asks to run, emulate, extract, validate, or refine Arbor/research_agent/AutoResearch behavior, especially when a coordinator must load phase skills for setup, ideation, executors, merge evaluation, novelty search, plugins, resume, and reports."
+description: "Top-level controller for recreating the open-source AutoResearch workflow as a suite of skills. Use when the user asks to run, emulate, extract, validate, or refine Arbor/AutoResearch behavior, especially when a coordinator must load phase skills for setup, ideation, executors, merge evaluation, novelty search, plugins, resume, and reports."
 ---
 
 # Arbor Agent Orchestrator
@@ -12,7 +12,7 @@ wrapper performs Arbor-style intake and then loads this orchestrator.
 
 ## Source Model
 
-This suite mirrors the `open-source` branch of `research_agent`, not the older
+This suite mirrors the `open-source` branch of `arbor`, not the older
 single hypothesis-tree extraction. The product entry point is `arbor`; the run
 architecture is:
 

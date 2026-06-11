@@ -27,12 +27,14 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from .._app import CONFIG_DIR_NAME
+
 #: Bump when the on-disk shape changes incompatibly. Readers reject unknown
 #: major versions rather than silently mis-parsing an old/newer file.
 SCHEMA_VERSION = 1
 
 #: Conventional location, relative to the workspace/agent dir.
-DEFAULT_CHECKPOINT_DIR = ".research_agent/checkpoint"
+DEFAULT_CHECKPOINT_DIR = f"{CONFIG_DIR_NAME}/checkpoint"
 DEFAULT_CHECKPOINT_NAME = "checkpoint.json"
 
 

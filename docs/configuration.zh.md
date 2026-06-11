@@ -1,9 +1,9 @@
 # 配置
 
-!!! tip "赶时间？这页你可以跳过"
-    大多数人只配置 Arbor 一次：运行 `arbor setup`，选一个 model，搞定。下面的一切，都是当你想
+!!! tip "时间有限？本页可跳过"
+    大多数人只配置 Arbor 一次：运行 `arbor setup`，选定 model 即可。下面的一切，都是当你想
     **换 model**、**设时间/成本预算**、**加入人工监督**，或**对准某个特定领域**时才需要。需要时
-    再回来看。
+    再回来查阅。
 
 本页是写给从没用过 Arbor 的人的。它按顺序回答三个问题：
 
@@ -15,12 +15,12 @@
 
 === "只是试试"
 
-    运行 `arbor setup` 选一个 model，然后 `arbor` 开始。你**不**需要配置文件或任何参数。好奇的话
-    读读[最重要的几项设置](#the-settings-that-matter-most)，其余忽略即可。
+    运行 `arbor setup` 选一个 model，然后 `arbor` 开始。你**不**需要配置文件或任何参数。若有兴趣，可
+    阅读[最重要的几项设置](#the-settings-that-matter-most)，其余忽略即可。
 
 === "做一项真实研究"
 
-    先 `arbor setup`，然后扫一眼[你能配置什么](#what-you-can-configure)和[设一个预算](#budgets-and-timeouts)。
+    先 `arbor setup`，然后浏览[你能配置什么](#what-you-can-configure)和[设一个预算](#budgets-and-timeouts)。
     一个 `--max-cycles` 参数加上合适的 model，通常就够了。
 
 === "反复跑同一个基准"
@@ -30,22 +30,22 @@
 
 ## 你能配置什么 { #what-you-can-configure }
 
-设置分四个层级，从"几乎人人都会动"到"高级"。
+设置分四个层级，从“几乎人人都会调整”到“高级”。
 
 | 层级 | 设置 | 它控制什么 | 你为何会改它 |
 | --- | --- | --- | --- |
 | **必要** | `provider`、`model`、`api_key`、`base_url` | Arbor 用哪个 LLM、怎么连上 | 你必须选一个 model 并一次性提供 key。 |
-| **重要** | `max_cycles` | Arbor 停下并写报告前跑多少个实验 | 主要的时间/成本旋钮。越大 = 更久、更深的搜索。 |
-| **重要** | `reasoning_effort` | 模型每步思考多努力（`low`/`medium`/`high`） | 用速度/成本换深度。 |
-| **重要** | `max_turns`、`timeout:` | 单个实验的硬性安全上限 | 在长任务上止住失控成本。 |
+| **重要** | `max_cycles` | Arbor 停下并写报告前跑多少个实验 | 控制时间与成本的主要参数。值越大，搜索越久、越深入。 |
+| **重要** | `reasoning_effort` | 模型每步的思考投入程度（`low`/`medium`/`high`） | 用速度/成本换深度。 |
+| **重要** | `max_turns`、`timeout:` | 单个实验的硬性安全上限 | 在长任务上控制失控的成本。 |
 | **可选** | `interaction_mode` | 你对运行的引导程度（自动 vs. 批准想法） | 你想要一个人在回路。见[交互模式](interaction-modes.md)。 |
 | **可选** | `webui_port` / `--no-webui` | 只读浏览器监控 | 实时看进度，或把它关掉。 |
 | **高级** | `plugin`、`plugin_profile` | 把 Arbor 重定向到一个领域（评测规则、保护文件、预算包） | 你经常跑同一类基准。见[插件](plugins.md)。 |
-| **高级** | skills | 磨炼智能体在某一步*如何*推理 | 你想要更好的构思/分析。见[技能](skills.md)。 |
+| **高级** | skills | 调整智能体在某一步*如何*推理 | 你想要更好的构思/分析。见[技能](skills.md)。 |
 
 ### 最重要的几项设置 { #the-settings-that-matter-most }
 
-如果你这辈子只动三样东西，就让它们是这三个：
+如果你只调整三项设置，那就是这三项：
 
 - **`model`** —— 质量与成本主要由它决定。
 - **`max_cycles`** —— 研究跑多久、多深。
@@ -93,7 +93,7 @@ arbor config path           # 文件位置
 arbor config init --provider openai --model gpt-5 --api-key dummy   # 非交互式写入
 ```
 
-`arbor config init` 是向导的可脚本化兄弟——一行就能配好一个本地网关：
+`arbor config init` 是该向导的可脚本化版本——一行命令即可配置好一个本地网关：
 
 ```bash
 arbor config init --provider litellm --model qwen-72b \
@@ -147,7 +147,7 @@ arbor config init --provider litellm --model qwen-72b \
 
 当一个项目需要它自己的持久设置时，往里放一个 YAML 文件。Arbor 会自动检测目标目录里的
 `research_config.yaml`、`arbor.yaml` 或 `autoresearch.yaml`（或用 `--config PATH` 传入）。这里的
-设置覆盖你的全局 setup，但败给 CLI 参数。
+设置会覆盖你的全局 setup，但优先级低于 CLI 参数。
 
 ```yaml title="research_config.yaml"
 # ── 模型 ───────────────────────────────────────────────
@@ -210,7 +210,7 @@ arbor run --max-cycles 20 --mode review --no-webui
 | --- | --- |
 | `max_cycles` | Arbor 定稿并写报告前，完成/跳过/失败的想法实验的最大数量。按次用 `--max-cycles` 覆盖。 |
 | `executor_max_turns` | 单个实验推理轮次的硬上限——一个失控/成本安全阀。用 `--max-turns` 覆盖。 |
-| `reasoning_effort` | 模型每步思考多努力（`low`/`medium`/`high`，在 provider 支持处）。 |
+| `reasoning_effort` | 模型每步的思考投入程度（`low`/`medium`/`high`，在 provider 支持处）。 |
 | `meta_model` | 可选的、更便宜/更快的模型，用于元层级步骤（提炼洞见、起草报告），而 `model` 驱动主循环。 |
 
 ### 预算与超时 { #budgets-and-timeouts }
@@ -223,7 +223,7 @@ arbor run --max-cycles 20 --mode review --no-webui
 | `run_training_max` | `604800`（7 天） | 单条长时间训练命令的上限。 |
 
 对基准而言，设定一个连贯预算最整洁的方式是一个**插件 profile**，它把 `max_cycles`、树深、
-executor 超时与总时间预算捆在一个名字下（例如 `mle_bench_lite`）。见[插件](plugins.md)。
+executor 超时与总时间预算归入一个名字下（例如 `mle_bench_lite`）。见[插件](plugins.md)。
 
 ### 人在回路与监控
 

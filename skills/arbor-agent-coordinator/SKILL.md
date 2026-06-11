@@ -1,6 +1,6 @@
 ---
 name: arbor-agent-coordinator
-description: "Coordinator phase for Arbor/research_agent: persistent ReAct loop, Idea Tree state, INIT/OBSERVE/IDEATE/SELECT/DISPATCH/DECIDE protocol, tool mapping, cycle caps, and coordinator-only behavior. Use after setup/intake and before phase-specific ideation, executor, merge, search, or report skills."
+description: "Coordinator phase for Arbor: persistent ReAct loop, Idea Tree state, INIT/OBSERVE/IDEATE/SELECT/DISPATCH/DECIDE protocol, tool mapping, cycle caps, and coordinator-only behavior. Use after setup/intake and before phase-specific ideation, executor, merge, search, or report skills."
 ---
 
 # Arbor Coordinator

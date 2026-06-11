@@ -53,7 +53,7 @@ export default function Problem() {
 
             <p>
               {zh
-                ? '难点不只是跑得更久。系统必须保留试过什么、什么失败了、什么迁移成功了，以及哪条分支值得下一次实验。'
+                ? '难点不只在于运行更久。系统必须记住试过什么、什么失败了、什么成功迁移，以及哪条分支值得下一次实验。'
                 : 'The hard part is not merely running longer. The system must preserve what was tried, what failed, what transferred, and which branch deserves the next experiment.'}
             </p>
           </Reveal>

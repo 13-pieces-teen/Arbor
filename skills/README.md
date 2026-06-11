@@ -1,7 +1,7 @@
 # Arbor Research Agent Skill Suite
 
 This directory contains a Codex/Claude Code skill suite that reconstructs the
-open-source Arbor/AutoResearch behavior from `research_agent` as a set of
+open-source Arbor/AutoResearch behavior from `arbor` as a set of
 Agent Skills.
 
 Most users should invoke only the public entrypoint:
@@ -192,7 +192,7 @@ Each skill directory contains:
 Additional resources:
 
 - `arbor-agent-orchestrator/references/source-map.md`: source-level mapping
-  from the `research_agent` open-source branch to this suite.
+  from the `arbor` open-source branch to this suite.
 - `arbor-agent-orchestrator/references/compatibility.md`: Codex and Claude
   Code compatibility notes.
 - `arbor-agent-tools/references/tool-mapping.md`: mapping between native Arbor
@@ -204,7 +204,7 @@ Additional resources:
 
 ## Arbor Behavior Mapping
 
-| Arbor/research_agent behavior | Skill suite equivalent |
+| Arbor behavior | Skill suite equivalent |
 | --- | --- |
 | `arbor run` starts with intake and a Research Contract | `arbor-research-agent` |
 | `.arbor/sessions/<run_name>/` session layout | `arbor-agent-setup-intake` + `arbor-agent-tools` |
@@ -509,7 +509,7 @@ runtime is installed. Use this skill suite when you want to:
 # Arbor Research Agent Skill Suite（中文）
 
 本目录包含一套 Codex/Claude Code skill suite，用 Agent Skills 的形式复刻
-`research_agent` open-source 分支中的 Arbor/AutoResearch 行为。
+`arbor` open-source 分支中的 Arbor/AutoResearch 行为。
 
 大多数用户只需要调用公开入口：
 
@@ -690,7 +690,7 @@ tools，或需要 skill-based reconstruction 的环境中，让 Codex/Claude Cod
 
 额外资源：
 
-- `arbor-agent-orchestrator/references/source-map.md`：从 `research_agent`
+- `arbor-agent-orchestrator/references/source-map.md`：从 `arbor`
   open-source 分支到本 suite 的源码级映射。
 - `arbor-agent-orchestrator/references/compatibility.md`：Codex 和 Claude Code
   兼容性说明。
@@ -702,7 +702,7 @@ tools，或需要 skill-based reconstruction 的环境中，让 Codex/Claude Cod
 
 ## Arbor 行为映射
 
-| Arbor/research_agent 行为 | skill suite 对应 |
+| Arbor 行为 | skill suite 对应 |
 | --- | --- |
 | `arbor run` 先进入 intake 并整理 Research Contract | `arbor-research-agent` |
 | `.arbor/sessions/<run_name>/` session layout | `arbor-agent-setup-intake` + `arbor-agent-tools` |

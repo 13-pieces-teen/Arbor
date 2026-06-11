@@ -66,8 +66,8 @@ use a slash command:
 
 ## Writing your own Skill
 
-1. Create the folder `.research_agent/skills/` inside your project and add a markdown file
-   there, e.g. `<project>/.research_agent/skills/my_skill.md`. Arbor discovers project
+1. Create the folder `.arbor/skills/` inside your project and add a markdown file
+   there, e.g. `<project>/.arbor/skills/my_skill.md`. Arbor discovers project
    Skills from this folder; a project Skill with the same `name` overrides a bundled one.
 2. Add the `name`, `description`, and `when_to_apply` front matter.
 3. Write the playbook. Be concrete and prescriptive — a Skill is most effective when it

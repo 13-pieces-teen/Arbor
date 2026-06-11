@@ -1,6 +1,6 @@
 ---
 name: arbor-agent-resume-report
-description: "Resume, checkpoint, event, dashboard, finalization, and report phase for Arbor/research_agent. Use when continuing interrupted sessions, handling running-node requeue, writing checkpoints/messages, consuming events.jsonl/run_stats, recovering best submissions, generating REPORT.md, or summarizing durable artifacts."
+description: "Resume, checkpoint, event, dashboard, finalization, and report phase for Arbor. Use when continuing interrupted sessions, handling running-node requeue, writing checkpoints/messages, consuming events.jsonl/run_stats, recovering best submissions, generating REPORT.md, or summarizing durable artifacts."
 ---
 
 # Arbor Resume And Report

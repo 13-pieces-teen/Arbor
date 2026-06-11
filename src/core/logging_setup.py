@@ -24,7 +24,7 @@ _NOISY_LOGGERS = [
 def setup_logging(*, verbose: bool = False) -> None:
     """Configure logging for the research agent.
 
-    Agent-level logs (research_agent.*) use INFO (or DEBUG if verbose).
+    Agent-level logs (arbor.*) use INFO (or DEBUG if verbose).
     HTTP/SDK client libraries are silenced to WARNING to keep output readable.
     """
     log_level = logging.DEBUG if verbose else logging.INFO

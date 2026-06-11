@@ -1,4 +1,4 @@
-"""research_agent — AI-powered autonomous research framework.
+"""arbor — AI-powered autonomous research framework.
 
 Sub-packages:
 - core: Shared infrastructure (Agent, tools, LLM providers, context management)

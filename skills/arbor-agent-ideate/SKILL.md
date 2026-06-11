@@ -1,6 +1,6 @@
 ---
 name: arbor-agent-ideate
-description: "Strict IDEATE-stage skill for Arbor/research_agent. Use immediately after TreeView(format=\"constraints\") when drafting Idea Tree nodes, enforcing the idea_drafting and first_principles_probe behavior, depth-aware idea levels, four-line TreeAddNode hypotheses, conflict checks, and self-filtering against shallow tweaks."
+description: "Strict IDEATE-stage skill for Arbor. Use immediately after TreeView(format=\"constraints\") when drafting Idea Tree nodes, enforcing the idea_drafting and first_principles_probe behavior, depth-aware idea levels, four-line TreeAddNode hypotheses, conflict checks, and self-filtering against shallow tweaks."
 ---
 
 # Arbor Ideation Gate
