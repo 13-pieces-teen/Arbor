@@ -75,6 +75,8 @@ If you use Arbor in your research, please cite the paper:
             Gongrui Zhang and Zhirong Wu and Bei Liu and Zhengyuan Yang and
             Linjie Li and Lijuan Wang and Hongjin Qian and Yutao Zhu and Zhicheng Dou},
   year   = {2026},
-  note   = {Living technical report}
+  eprint = {2606.11926},
+  archivePrefix = {arXiv},
+  url    = {https://arxiv.org/abs/2606.11926}
 }
 ```
