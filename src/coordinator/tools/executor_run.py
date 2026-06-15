@@ -27,7 +27,7 @@ from .git_ops import _run_git
 
 if TYPE_CHECKING:
     from ..config import CoordinatorConfig
-    from ..idea_tree import IdeaTree
+    from ..idea_tree import IdeaTree, Node
     from ...core.llm.base import LLMProvider
 
 log = logging.getLogger(__name__)
@@ -38,7 +38,34 @@ log = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 
-_CYCLE_STATUSES = {"done", "merged", "pruned", "failed"}
+_CYCLE_STATUSES = {"done", "merged", "pruned", "failed", "needs_retry"}
+
+
+def _classify_executor_outcome(
+    *,
+    score: Any,
+    eval_status: str | None,
+    stop_reason: str | None,
+    raw_report: str,
+) -> str:
+    """Decide a node's terminal status from an executor run's outcome.
+
+    A node is only "done" when it produced a real metric, or when eval was
+    *intentionally* skipped on otherwise-complete work. Turn-cap / timeout /
+    error / eval-crash exits become "needs_retry" — an incomplete-but-not-
+    abandoned state that is excluded from every "completed experiment" filter
+    (best-node, convergence, reports) and can be resumed via ResumeExecutor.
+    """
+    if isinstance(score, (int, float)) and not isinstance(score, bool):
+        return "done"  # produced a metric — trust it even on a late stop
+    if raw_report.startswith("[Timed out") or raw_report.startswith("[Error:"):
+        return "needs_retry"
+    if stop_reason == "max_turns":
+        return "needs_retry"
+    if eval_status == "skipped":
+        return "done"  # intentional no-eval on solid work — acceptable
+    return "needs_retry"  # failed_to_run / unparseable report
+
 
 
 def _completed_cycles(tree: "IdeaTree") -> int:
@@ -63,6 +90,10 @@ async def _save_experiment_artifacts(
     parsed: dict[str, Any],
     actual_branch: str,
     agent_turns: int,
+    status: str = "done",
+    eval_status: str | None = None,
+    stop_reason: str | None = None,
+    attempt: int = 1,
 ) -> None:
     """Save per-experiment artifacts to the workspace experiments/ directory."""
     workspace = config.workspace_dir
@@ -76,6 +107,11 @@ async def _save_experiment_artifacts(
         f"# Experiment {node_id}\n\n"
         f"**Hypothesis**: {hypothesis}\n"
         f"**Branch**: `{actual_branch}`\n"
+        f"**Attempt**: {attempt}\n"
+        f"**Status**: {status}\n"
+        f"**Eval status**: {eval_status or 'unknown'}"
+        + (f" (stop_reason={stop_reason})" if stop_reason else "")
+        + "\n"
         f"**Turns**: {agent_turns}\n\n"
         f"---\n\n"
         f"{raw_report}\n"
@@ -90,6 +126,10 @@ async def _save_experiment_artifacts(
         "result": parsed.get("result", ""),
         "branch": actual_branch,
         "turns": agent_turns,
+        "status": status,
+        "eval_status": eval_status,
+        "stop_reason": stop_reason,
+        "attempt": attempt,
     }
     (exp_dir / "metrics.json").write_text(
         json.dumps(metrics, indent=2, ensure_ascii=False), encoding="utf-8",
@@ -106,6 +146,61 @@ async def _save_experiment_artifacts(
             config.cwd,
         )
         (exp_dir / "diff.patch").write_text(full_diff, encoding="utf-8")
+
+
+def _build_resume_context(
+    config: "CoordinatorConfig", node: "Node", attempt: int
+) -> str | None:
+    """Assemble context for a resumed attempt from the prior attempt's artifacts.
+
+    The executor worktree is gone, but its branch (``node.code_ref``) is checked
+    out as this attempt's start point, so the code is already present. This block
+    re-grounds the model on what the last attempt did, where it stopped, and the
+    shape of its diff — without replaying the (discarded) message history.
+    """
+    parts: list[str] = [
+        f"## Resuming a prior attempt (attempt {attempt})",
+        (
+            f"A previous executor on this idea ended as `{node.status}` "
+            f"(eval_status={node.eval_status or 'unknown'}"
+            + (f", stop_reason={node.stop_reason}" if node.stop_reason else "")
+            + "). "
+            + (
+                f"Its committed work is already on this worktree's branch "
+                f"`{node.code_ref}` — continue from there; do NOT start over. "
+                if node.code_ref
+                else "Its work was not committed, so you are starting from trunk; "
+                "use the prior report below to avoid repeating dead ends. "
+            )
+            + "Finish the implementation and run the evaluation so a real score "
+            "is produced."
+        ),
+    ]
+    if node.result:
+        parts.append(f"### Prior result\n{node.result.strip()}")
+    if node.insight:
+        parts.append(f"### Prior insight\n{node.insight.strip()}")
+
+    workspace = config.workspace_dir
+    if workspace:
+        exp_dir = Path(workspace) / "experiments" / node.id
+        report = exp_dir / "report.md"
+        diff = exp_dir / "diff.patch"
+        if report.exists():
+            text = report.read_text(encoding="utf-8", errors="replace")
+            parts.append(f"### Prior report (truncated)\n{_tail(text, 6000)}")
+        if diff.exists():
+            text = diff.read_text(encoding="utf-8", errors="replace")
+            parts.append(f"### Prior diff --stat / patch (truncated)\n{_tail(text, 4000)}")
+    return "\n\n".join(parts)
+
+
+def _tail(text: str, limit: int) -> str:
+    """Return the last ``limit`` chars of ``text`` with a truncation marker."""
+    text = text.strip()
+    if len(text) <= limit:
+        return text
+    return f"[... truncated to last {limit} chars ...]\n" + text[-limit:]
 
 
 # ---------------------------------------------------------------------------
@@ -391,6 +486,11 @@ async def _parse_executor_report(
             '- "insight": string (key learning, 1-3 sentences)\n'
             '- "result": string (factual description, 1-2 sentences)\n'
             '- "code_ref": string or null (git branch name if mentioned)\n'
+            '- "eval_status": one of "scored" (a numeric metric was produced by '
+            "running evaluation), \"skipped\" (implementation looks complete but "
+            "evaluation was intentionally not run), or \"failed_to_run\" "
+            "(evaluation was attempted but crashed/produced no parseable metric, "
+            "or there was no working implementation)\n"
             "No markdown fencing. Just raw JSON."
         ),
         messages=[
@@ -426,7 +526,13 @@ async def _parse_executor_report(
         return json.loads(text)
     except json.JSONDecodeError:
         log.warning("Failed to parse JSON from LLM response: %s", text[:200])
-        return {"score": None, "insight": "", "result": text[:500], "code_ref": None}
+        return {
+            "score": None,
+            "insight": "",
+            "result": text[:500],
+            "code_ref": None,
+            "eval_status": "failed_to_run",
+        }
 
 
 async def _run_after_executor_hook(
@@ -466,10 +572,17 @@ async def _run_single_executor(
     provider: "LLMProvider",
     node_id: str,
     additional_context: str | None = None,
+    resume: bool = False,
+    extra_turns: int = 0,
 ) -> str:
     """Run one executor in an isolated git worktree.
 
     Handles the full lifecycle: validate → worktree → run → parse → update tree.
+
+    When ``resume`` is set, the worktree branches from the node's preserved
+    ``code_ref`` (the prior attempt's committed work) instead of trunk, the turn
+    budget is raised by ``extra_turns``, and the prior attempt's report/diff are
+    injected as context (see ResumeExecutor).
     """
     # ── Early stop: gold already achieved ──────────────────────────
     if tree.meta.get("achieved_medal") == "gold":
@@ -488,11 +601,14 @@ async def _run_single_executor(
     node = tree.get_node(node_id)
     if node is None:
         return f"Error: Node {node_id!r} not found in the idea tree."
-    if node.status not in ("pending", "running"):
+    if node.status not in ("pending", "running", "needs_retry"):
         return (
             f"Error: Node {node_id} has status={node.status!r}. "
-            f"Only 'pending' nodes can be dispatched."
+            f"Only 'pending' or 'needs_retry' nodes can be dispatched."
         )
+
+    # Attempt number for this dispatch (1 for the first run, +1 per resume).
+    attempt = node.attempt + 1 if resume else node.attempt
 
     # ── 1b. Enforce leaf-only dispatch when max_depth is set ───────────
     if tree.max_depth is not None and node.depth < tree.max_depth:
@@ -513,15 +629,24 @@ async def _run_single_executor(
     })
 
     # ── 3. Create worktree ──────────────────────────────────────────────
+    # On resume, continue the prior attempt's branch so its committed code is
+    # the starting point; otherwise branch fresh from trunk. The attempt suffix
+    # keeps each resume on its own auditable branch.
+    resume_from = node.code_ref if (resume and node.code_ref) else None
     branch_name = _compute_branch_name(config, node_id, node.hypothesis)
+    if resume_from:
+        branch_name = f"{branch_name}-a{attempt}"
+    start_point = resume_from or config.trunk_branch
     worktree_path: Path | None = None
     actual_branch = branch_name
 
     try:
         worktree_path, actual_branch = await _create_worktree(
-            config.cwd, branch_name, start_point=config.trunk_branch,
+            config.cwd, branch_name, start_point=start_point,
         )
     except RuntimeError as e:
+        # Worktree setup failed before anything ran — no compute spent, so keep
+        # it re-dispatchable (pending) rather than consuming a cycle as needs_retry.
         await tree.async_update_node(node_id, status="pending", result=f"Worktree creation failed: {e}")
         return f"Error creating worktree for {node_id}: {e}"
     tree.bus.emit(ev.EXECUTOR_START, {
@@ -534,6 +659,7 @@ async def _run_single_executor(
     # ── 4. Build executor ───────────────────────────────────────────────
     raw_report = ""
     agent_turns = 0
+    stop_reason: str | None = None
     agent: Agent | None = None
     executor_t0 = asyncio.get_running_loop().time()
 
@@ -541,6 +667,8 @@ async def _run_single_executor(
         executor_config = config.to_executor_config(node_id, node.hypothesis)
         executor_config.cwd = str(worktree_path)
         executor_config.event_bus = tree.bus
+        if resume and extra_turns:
+            executor_config.max_turns += extra_turns
 
         system_prompt = build_system_prompt(executor_config, plugin=config.plugin)
         tools = get_all_tools(
@@ -572,12 +700,16 @@ async def _run_single_executor(
             worktree_cwd=str(worktree_path),
             node_id=node_id,
         )
+        merged_context = additional_context
+        if resume:
+            prior = _build_resume_context(config, node, attempt)
+            merged_context = "\n\n".join(c for c in (prior, additional_context) if c)
         prompt = _build_executor_prompt(
             worktree_path=worktree_path,
             node=node,
             ancestor_insights=ancestor_insights,
             eval_info=eval_info,
-            additional_context=additional_context,
+            additional_context=merged_context,
         )
 
         log.info(
@@ -592,14 +724,17 @@ async def _run_single_executor(
         )
         raw_report = result
         agent_turns = agent.total_turns
+        stop_reason = agent.stop_reason
 
     except asyncio.TimeoutError:
         agent_turns = agent.total_turns if agent is not None else 0
+        stop_reason = agent.stop_reason if agent is not None else None
         raw_report = f"[Timed out after {config.executor_timeout}s]"
         log.warning("Executor for %s timed out after %ds", node_id, config.executor_timeout)
 
     except Exception as e:
         agent_turns = agent.total_turns if agent is not None else 0
+        stop_reason = agent.stop_reason if agent is not None else None
         raw_report = f"[Error: {e}]"
         log.error("Executor for %s failed: %s", node_id, e)
 
@@ -635,15 +770,27 @@ async def _run_single_executor(
     insight = parsed.get("insight", "")
     result_text = parsed.get("result", "")
     code_ref = parsed.get("code_ref") or actual_branch
+    eval_status = parsed.get("eval_status", "failed_to_run")
 
     # ── 9. Update tree node ─────────────────────────────────────────────
+    # Only a real score (or an intentionally-skipped eval on solid work) counts
+    # as "done"; turn-cap / timeout / error / eval-crash become "needs_retry".
+    new_status = _classify_executor_outcome(
+        score=score,
+        eval_status=eval_status,
+        stop_reason=stop_reason,
+        raw_report=raw_report,
+    )
     await tree.async_update_node(
         node_id,
-        status="done",
+        status=new_status,
         score=score,
         insight=insight or ("Timed out" if raw_report.startswith("[Timed out") else ""),
         result=result_text or raw_report[:300],
         code_ref=code_ref,
+        eval_status=eval_status,
+        stop_reason=stop_reason,
+        attempt=attempt,
     )
     duration = max(0.0, asyncio.get_running_loop().time() - executor_t0)
     tree.bus.emit(ev.EXECUTOR_END, {
@@ -656,6 +803,7 @@ async def _run_single_executor(
         ),
         "turns": agent_turns,
         "branch": code_ref,
+        "status": new_status,
     })
     tree.bus.emit(ev.CYCLE_END, {
         "cycle_num": cycle_num,
@@ -674,6 +822,10 @@ async def _run_single_executor(
             parsed=parsed,
             actual_branch=actual_branch,
             agent_turns=agent_turns,
+            status=new_status,
+            eval_status=eval_status,
+            stop_reason=stop_reason,
+            attempt=attempt,
         )
     except Exception as e:
         log.warning("Failed to save experiment artifacts for %s: %s", node_id, e)
@@ -698,16 +850,29 @@ async def _run_single_executor(
             + raw_report[-4000:]
         )
 
+    retry_hint = ""
+    if new_status == "needs_retry":
+        retry_hint = (
+            "\n\n> This node is **needs_retry** (no score — "
+            f"{eval_status}"
+            + (f", stop_reason={stop_reason}" if stop_reason else "")
+            + "). The branch above preserves its committed work. To continue it "
+            "with extra turns and the prior report injected, call "
+            f"`ResumeExecutor(node_id={node_id!r})`; or `RunExecutor` to retry "
+            "from trunk, or `TreePrune` to abandon."
+        )
+
     return (
         f"## Executor Result for {node_id}\n\n"
         f"**Hypothesis**: {node.hypothesis}\n"
-        f"**Status**: done (auto-updated)\n"
+        f"**Status**: {new_status} (attempt {attempt})\n"
         f"**Score**: {score_str}\n"
         f"**Insight**: {insight}\n"
         f"**Branch**: `{code_ref}`\n"
         f"**Turns**: {agent_turns}\n\n"
         f"### Propagation\n{propagation_result}\n\n"
         f"### Report Excerpt\n\n{report_excerpt}"
+        f"{retry_hint}"
     )
 
 
@@ -772,7 +937,11 @@ class RunExecutorTool(Tool):
         "properties": {
             "node_id": {
                 "type": "string",
-                "description": "The idea node ID to implement (must be 'pending').",
+                "description": (
+                    "The idea node ID to implement (must be 'pending' or "
+                    "'needs_retry'; a 'needs_retry' node restarts from trunk — "
+                    "use ResumeExecutor to continue its preserved branch instead)."
+                ),
             },
             "additional_context": {
                 "type": "string",
@@ -810,7 +979,7 @@ class RunExecutorTool(Tool):
         if done >= cap:
             return (
                 f"HARD LIMIT REACHED: {done}/{cap} cycles already consumed "
-                f"(counting done/merged/pruned/failed). RunExecutor is disabled. "
+                f"(counting done/merged/pruned/failed/needs_retry). RunExecutor is disabled. "
                 f"Finalize now: merge the best branch if it beats the threshold, "
                 f"otherwise stop and report."
             )
@@ -845,9 +1014,97 @@ class RunExecutorTool(Tool):
         return result
 
 
-# ---------------------------------------------------------------------------
-# Tool: RunExecutorParallel (batch dispatch)
-# ---------------------------------------------------------------------------
+class ResumeExecutorTool(RunExecutorTool):
+    """Resume a ``needs_retry`` node, continuing its preserved branch.
+
+    Unlike RunExecutor (which would restart from trunk), this continues from the
+    node's ``code_ref`` branch — the prior attempt's committed work — with extra
+    turns and the prior report/diff injected as context. Use it when an executor
+    timed out, hit its turn cap, or failed to produce a score, and the partial
+    work is worth finishing rather than discarding.
+    """
+
+    name = "ResumeExecutor"
+    description = (
+        "Resume a 'needs_retry' idea node: continue from its preserved branch "
+        "(the prior attempt's committed work) with extra turns and the prior "
+        "report/diff injected as context, so the executor finishes the work and "
+        "produces a real score instead of starting over.\n\n"
+        "Use when a node is 'needs_retry' (timed out / hit max turns / eval "
+        "failed to run) and the partial work is worth continuing. To retry from "
+        "scratch instead, use RunExecutor; to abandon, use TreePrune."
+    )
+    input_schema: dict[str, Any] = {
+        "type": "object",
+        "properties": {
+            "node_id": {
+                "type": "string",
+                "description": "The 'needs_retry' idea node ID to resume.",
+            },
+            "extra_turns": {
+                "type": "integer",
+                "description": "Extra turns added to the executor's budget (default 10).",
+            },
+            "additional_context": {
+                "type": "string",
+                "description": (
+                    "Extra steering for the resumed attempt (optional). The prior "
+                    "report/diff and eval info are injected automatically."
+                ),
+            },
+        },
+        "required": ["node_id"],
+    }
+
+    async def execute(self, **kwargs: Any) -> str:
+        node_id = kwargs["node_id"]
+        node = self._tree.get_node(node_id)
+        if node is None:
+            return f"Error: Node {node_id!r} not found in the idea tree."
+        if node.status != "needs_retry":
+            return (
+                f"Error: ResumeExecutor only applies to 'needs_retry' nodes; "
+                f"{node_id} is {node.status!r}. Use RunExecutor for a fresh dispatch."
+            )
+        if not node.code_ref:
+            return (
+                f"Error: Node {node_id} has no preserved branch (code_ref is None) — "
+                f"the prior attempt likely crashed before committing any work, so "
+                f"there is nothing to continue. Use RunExecutor to retry from trunk."
+            )
+        # node.attempt counts completed dispatches (1 = initial run); max_retries
+        # is retries beyond that, so allow while attempt <= max_retries.
+        max_retries = getattr(self._config, "max_retries", 3)
+        if node.attempt > max_retries:
+            return (
+                f"Error: Node {node_id} has already used {node.attempt - 1} of "
+                f"{max_retries} allowed retries. Prune it or accept the result "
+                f"instead of resuming again."
+            )
+        done = _completed_cycles(self._tree)
+        cap = self._config.max_cycles
+        if done >= cap:
+            return (
+                f"HARD LIMIT REACHED: {done}/{cap} cycles already consumed. "
+                f"ResumeExecutor is disabled. Finalize now."
+            )
+        result = await _run_single_executor(
+            tree=self._tree,
+            config=self._config,
+            provider=self._provider,
+            node_id=node_id,
+            additional_context=kwargs.get("additional_context"),
+            resume=True,
+            extra_turns=int(kwargs.get("extra_turns", 10) or 10),
+        )
+        if self._convergence_detector:
+            signal = self._convergence_detector.on_experiment_complete(node_id)
+            if signal:
+                intervention = self._convergence_detector.format_intervention(signal)
+                result += f"\n\n---\n{intervention}\n---"
+                if signal.level == "stop":
+                    self._convergence_detector.write_stop_signal(self._config.workspace_dir)
+        return result
 
 class RunExecutorParallelTool(Tool):
     """Dispatch multiple executors in parallel, each in its own git worktree."""
@@ -942,7 +1199,7 @@ class RunExecutorParallelTool(Tool):
         if remaining <= 0:
             return (
                 f"HARD LIMIT REACHED: {done}/{cap} cycles already consumed "
-                f"(counting done/merged/pruned/failed). RunExecutorParallel is "
+                f"(counting done/merged/pruned/failed/needs_retry). RunExecutorParallel is "
                 f"disabled. Finalize now: merge the best branch if it beats the "
                 f"threshold, otherwise stop and report."
             )
@@ -960,9 +1217,10 @@ class RunExecutorParallelTool(Tool):
             node = self._tree.get_node(task["node_id"])
             if node is None:
                 errors.append(f"Node {task['node_id']!r} not found.")
-            elif node.status != "pending":
+            elif node.status not in ("pending", "needs_retry"):
                 errors.append(
-                    f"Node {task['node_id']} has status={node.status!r}, expected 'pending'."
+                    f"Node {task['node_id']} has status={node.status!r}, "
+                    f"expected 'pending' or 'needs_retry'."
                 )
             elif (
                 self._tree.max_depth is not None

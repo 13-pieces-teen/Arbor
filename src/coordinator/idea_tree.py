@@ -18,7 +18,7 @@ from typing import Any, ClassVar, Literal
 
 log = logging.getLogger(__name__)
 
-NodeStatus = Literal["pending", "running", "done", "merged", "pruned"]
+NodeStatus = Literal["pending", "running", "done", "needs_retry", "merged", "pruned"]
 
 
 # ---------------------------------------------------------------------------
@@ -43,6 +43,13 @@ class Node:
     code_ref: str | None = None  # Git branch name
     related_work: str = ""  # SearchAgent / web-search annotation (Markdown)
 
+    # Outcome metadata (set when an executor finishes). eval_status classifies
+    # why there is/isn't a score; stop_reason mirrors Agent.stop_reason; attempt
+    # counts dispatches (incremented by ResumeExecutor). See _classify_executor_outcome.
+    eval_status: str | None = None  # "scored" | "skipped" | "failed_to_run"
+    stop_reason: str | None = None  # "finished" | "max_turns" | None
+    attempt: int = 1  # 1 for the first run, +1 per resume
+
     # Fields that may be mutated via update_node / async_update_node.
     # Centralised so the whitelist lives in one place.
     MUTABLE_FIELDS: ClassVar[frozenset[str]] = frozenset({
@@ -53,6 +60,9 @@ class Node:
         "score",
         "code_ref",
         "related_work",
+        "eval_status",
+        "stop_reason",
+        "attempt",
     })
 
     def to_dict(self) -> dict[str, Any]:
@@ -74,6 +84,12 @@ class Node:
             d["code_ref"] = self.code_ref
         if self.related_work:
             d["related_work"] = self.related_work
+        if self.eval_status:
+            d["eval_status"] = self.eval_status
+        if self.stop_reason:
+            d["stop_reason"] = self.stop_reason
+        if self.attempt and self.attempt != 1:
+            d["attempt"] = self.attempt
         return d
 
     @classmethod
@@ -90,6 +106,9 @@ class Node:
             score=data.get("score", data.get("score_delta")),  # backward compat
             code_ref=data.get("code_ref"),
             related_work=data.get("related_work", ""),
+            eval_status=data.get("eval_status"),
+            stop_reason=data.get("stop_reason"),
+            attempt=data.get("attempt", 1),
         )
 
 
@@ -229,6 +248,10 @@ class IdeaTree:
         if "status" in updates:
             status = updates["status"]
             if status == "done":
+                # needs_retry is intentionally NOT a completion event — it is an
+                # incomplete outcome. Executor-originated transitions surface via
+                # EXECUTOR_END (which carries the status); manual ones update the
+                # tree and refresh on the next dashboard re-ingest.
                 from ..events.types import IDEA_COMPLETED
                 self.bus.emit(IDEA_COMPLETED, {
                     "node_id": node_id,

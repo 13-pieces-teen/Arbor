@@ -209,6 +209,7 @@ _STATUS_DECOR: dict[str, tuple[str, str, str]] = {
     "running":    ("▸",   "magenta",      "magenta"),
     "done":       ("✓",   "bold green",   "green"),
     "merged":     ("↻",   "bold green",   "bold green"),
+    "needs_retry":("⟳",   "bold yellow",  "yellow"),
     "pruned":     ("✗",   "bright_black", "bright_black"),
     "failed":     ("!",   "bold red",     "red"),
 }
@@ -1606,6 +1607,7 @@ class RunDashboard:
             f"[bold]ideas {s.ideas_proposed}[/]  "
             f"[green]✓{s.ideas_done}[/] "
             f"[bright_black]✗{s.ideas_pruned}[/] "
+            f"[yellow]⟳{s.ideas_needs_retry}[/] "
             f"[magenta]▸{s.ideas_running}[/]"
         )
         direction_glyph = "↓" if s.metric_direction == "minimize" else "↑"
@@ -2622,6 +2624,8 @@ def _format_idea_metric(
         return Text(_short(rec.pruned_reason or "—", 10), style="bright_black")
     if rec.status == "failed":
         return Text("failed", style="red")
+    if rec.status == "needs_retry":
+        return Text("retry", style="yellow")
     return Text("")
 
 

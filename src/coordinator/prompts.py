@@ -380,7 +380,7 @@ the WRONG code and results will leak into the main repository.
 
 After INIT, repeat these steps until you run out of promising directions, \
 or until the hard cycle cap is hit (currently {config.max_cycles} — \
-RunExecutor will refuse once done+merged+pruned+failed nodes reach this \
+RunExecutor will refuse once done+merged+pruned+failed+needs_retry nodes reach this \
 number):
 
 ### Step 1: OBSERVE
@@ -405,6 +405,9 @@ Dispatch Executor(s) to implement and test ideas.
 - **Single idea**: Use RunExecutor(node_id, additional_context=...)
 - **Multiple ideas**: Use RunExecutorParallel(tasks=[...]) to explore \
 2-4 ideas simultaneously for faster iteration.
+- **Resume a stalled idea**: Use ResumeExecutor(node_id, extra_turns=...) on a \
+`needs_retry` node to continue its preserved branch with the prior report \
+injected (see Step 5).
 - Evaluation info (eval_cmd, scores, dataset_info) from tree metadata \
 is **automatically injected** into every Executor's prompt. You don't \
 need to repeat it in additional_context.
@@ -416,7 +419,10 @@ current trunk — it cannot interfere with other Executors or your trunk.
 - RunExecutor/RunExecutorParallel automatically:
   (a) Runs the executor on an isolated branch from trunk
   (b) Parses the report to extract score, insight, and code_ref
-  (c) Updates the tree node (status="done", score, insight, etc.)
+  (c) Updates the tree node: status="done" when a real score was produced \
+(or eval was intentionally skipped on solid work), otherwise \
+status="needs_retry" (timed out, hit max turns, or eval failed to run — \
+no parseable score). A "needs_retry" node is NOT a successful experiment.
   (d) Propagates insights up through the tree to the root
 - Review the returned summary to verify the auto-extracted results.
 - If the auto-extraction looks wrong, use TreeUpdateNode to correct it.
@@ -433,6 +439,11 @@ verifies the score before merging. You do NOT need to run B_test yourself.
   3. After a successful merge: update trunk_score via TreeSetMeta, then \
 TreeUpdateNode to set status="merged"
 - **prune**: a direction has failed → TreePrune
+- **retry**: a node is `needs_retry` (no score — timed out / hit max turns / \
+eval failed to run) → use ResumeExecutor(node_id, extra_turns=...) to continue \
+its preserved branch with the prior report injected, RunExecutor to retry from \
+trunk, or TreePrune to abandon it. Do NOT treat a `needs_retry` node as a \
+completed experiment.
 - **stop**: all directions explored or diminishing returns
 - Use TreePropagate manually if you update a node's insight via \
 TreeUpdateNode and want to re-propagate.

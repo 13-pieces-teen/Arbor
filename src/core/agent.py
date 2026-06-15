@@ -208,6 +208,12 @@ class Agent:
         self.config = config
         self.messages: list[dict[str, Any]] = []
         self.total_turns = 0
+        # Why the loop exited, surfaced to callers alongside total_turns:
+        #   "finished"  — model produced a final answer with no tool calls
+        #   "max_turns" — exhausted the turn budget without a final answer
+        # Stays None if the run was cancelled mid-loop (e.g. timeout), since the
+        # coroutine never reaches a return. Callers detect that case otherwise.
+        self.stop_reason: str | None = None
         self.total_input_tokens = 0
         self.total_uncached_input_tokens = 0
         self.total_cache_read_tokens = 0
@@ -412,6 +418,7 @@ class Agent:
                     f"Done after {turn} turns ({reason}). "
                     f"Tokens: {self.total_input_tokens} in / {self.total_output_tokens} out"
                 )
+                self.stop_reason = "finished"
                 return text
 
             no_tool_nudges = 0
@@ -432,6 +439,7 @@ class Agent:
             })
 
         _print_status(f"Reached max turns ({self.config.max_turns}).")
+        self.stop_reason = "max_turns"
         return f"Agent stopped after {self.config.max_turns} turns without a final answer."
 
     # ------------------------------------------------------------------

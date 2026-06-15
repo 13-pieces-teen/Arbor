@@ -113,6 +113,7 @@ class RunState:
     ideas_pruned: int = 0
     ideas_merged: int = 0
     ideas_running: int = 0
+    ideas_needs_retry: int = 0
     best_score: float | None = None
     metric_direction: str = "maximize"
     baseline_score: float | None = None
@@ -537,7 +538,7 @@ class RunState:
             rec.score = float(score)
             self._bump_best(score)
         status = (d.get("status") or "done").lower()
-        rec.status = status if status in ("done", "failed") else "done"
+        rec.status = status if status in ("done", "failed", "needs_retry") else "done"
         rec.finished_at = time.monotonic()
         self._recount()
         self.mark_dirty()
@@ -599,7 +600,11 @@ class RunState:
             rec.score = float(score)
             self._bump_best(score)
         if rec.status == "running":
-            rec.status = "done"     # provisional until completed event lands
+            # Provisional until the completed event lands. The executor reports
+            # its classified outcome on EXECUTOR_END, so honour it when present
+            # (avoids briefly showing a needs_retry node as "done").
+            ev_status = (d.get("status") or "").lower()
+            rec.status = ev_status if ev_status in ("done", "needs_retry", "failed") else "done"
         rec.finished_at = time.monotonic()
         if self.current_idea_node == node:
             self.current_idea_node = None
@@ -674,7 +679,7 @@ class RunState:
     def _recount(self) -> None:
         """Recompute the small idea counters from the ledger so the
         header stays consistent without us tracking deltas by hand."""
-        c = {"running": 0, "done": 0, "merged": 0, "pruned": 0, "failed": 0}
+        c = {"running": 0, "done": 0, "merged": 0, "pruned": 0, "failed": 0, "needs_retry": 0}
         for rec in self.ideas.values():
             if rec.status in c:
                 c[rec.status] += 1
@@ -683,6 +688,7 @@ class RunState:
         self.ideas_done = c["done"] + c["merged"]   # both count toward "completed"
         self.ideas_pruned = c["pruned"] + c["failed"]
         self.ideas_merged = c["merged"]
+        self.ideas_needs_retry = c["needs_retry"]   # incomplete — its own bucket
 
     def seed_from_tree(self, tree_data: dict[str, Any]) -> None:
         """Rehydrate the idea ledger from a persisted idea tree (for --resume).
@@ -781,7 +787,9 @@ class RunState:
 
     @property
     def branch_budget_used(self) -> int:
-        return self.ideas_done + self.ideas_pruned
+        # Must mirror _CYCLE_STATUSES (executor_run.py): done/merged/pruned/failed
+        # AND needs_retry all consume a cycle toward max_cycles.
+        return self.ideas_done + self.ideas_pruned + self.ideas_needs_retry
 
 
 # ── module-level current state ─────────────────────────────────────

@@ -358,6 +358,10 @@ class CoordinatorConfig(ProxyModel):
 
     # ── Executor parameters ──────────────────────────────────────────
     executor_max_turns: int = 50
+    # Max resume attempts (retries beyond the initial run) before ResumeExecutor
+    # refuses to continue a node. Each resume increments node.attempt; bounds
+    # runaway resume loops.
+    max_retries: int = 3
 
     # ── Evaluation ───────────────────────────────────────────────────
     merge_threshold: float = 5.0  # soft guideline for the LLM

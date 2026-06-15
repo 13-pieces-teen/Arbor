@@ -246,8 +246,11 @@ class TreeUpdateNodeTool(Tool):
             },
             "status": {
                 "type": "string",
-                "enum": ["pending", "running", "done", "merged", "pruned"],
-                "description": "New status.",
+                "enum": ["pending", "running", "done", "needs_retry", "merged", "pruned"],
+                "description": (
+                    "New status. Use 'needs_retry' for an incomplete/unscored "
+                    "attempt that should be resumed or retried (it is NOT a success)."
+                ),
             },
             "insight": {
                 "type": "string",

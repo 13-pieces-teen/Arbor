@@ -144,6 +144,7 @@ def state_to_dict(s: Any) -> dict[str, Any]:
             "pruned": s.ideas_pruned,
             "merged": s.ideas_merged,
             "running": s.ideas_running,
+            "needs_retry": s.ideas_needs_retry,
         },
         "best_score": s.best_score,
         "baseline_score": s.baseline_score,

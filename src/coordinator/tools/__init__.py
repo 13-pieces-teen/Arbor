@@ -14,7 +14,7 @@ from ...core.tools.skill import LoadSkillTool
 from ...core.skill_registry import build_default_registry
 
 from .tree_ops import TreeViewTool, TreeAddNodeTool, TreeUpdateNodeTool, TreePruneTool, TreeSetMetaTool, TreePropagateTool
-from .executor_run import RunExecutorTool, RunExecutorParallelTool
+from .executor_run import RunExecutorTool, RunExecutorParallelTool, ResumeExecutorTool
 from .git_ops import GitMergeBranchTool
 from .search_ctx import SearchIdeaContextTool, SearchIdeaContextParallelTool, SearchStatusTool
 from .ask_user import AskUserTool
@@ -63,6 +63,10 @@ def get_coordinator_tools(
             workspace_dir=wdir, convergence_detector=convergence_detector,
         ),
         RunExecutorParallelTool(
+            cwd=cwd, tree=tree, config=config, provider=provider,
+            workspace_dir=wdir, convergence_detector=convergence_detector,
+        ),
+        ResumeExecutorTool(
             cwd=cwd, tree=tree, config=config, provider=provider,
             workspace_dir=wdir, convergence_detector=convergence_detector,
         ),

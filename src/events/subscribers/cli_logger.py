@@ -160,6 +160,7 @@ def _on_idea_completed(e: Event) -> None:
     glyph_style = {
         "merged": "bold green",
         "done":   "bold cyan",
+        "needs_retry": "bold yellow",
         "failed": "bold red",
         "pruned": "bright_black",
     }.get(status, "cyan")

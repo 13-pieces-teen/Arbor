@@ -87,6 +87,7 @@ _STATUS_COLORS = {
     "merged": "#22c55e",
     "done": "#3b82f6",
     "running": "#f59e0b",
+    "needs_retry": "#eab308",
     "pending": "#a3a3a3",
     "pruned": "#6b7280",
 }
@@ -95,6 +96,7 @@ _STATUS_BG = {
     "merged": "#dcfce7",
     "done": "#dbeafe",
     "running": "#fef3c7",
+    "needs_retry": "#fef9c3",
     "pending": "#f5f5f5",
     "pruned": "#f3f4f6",
 }
