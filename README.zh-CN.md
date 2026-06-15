@@ -199,7 +199,16 @@ ROOT（基线：20%）
 
 ## ⚙️ 配置
 
-通过 `arbor setup` 一次性配置 LLM 访问（存储在 `~/.arbor/config.yaml`），只需填写一个 `provider` 字段——`anthropic` 用于官方 Anthropic Claude API，`openai` 用于官方 OpenAI API，`litellm` 用于其他所有兼容 provider、代理或本地网关。即使第三方服务提供 OpenAI 或 Claude 格式的接口，也应通过 `litellm` 配置；例如 DeepSeek 应使用 `litellm`。API 密钥从环境变量或配置文件中读取；针对具体项目的任务和预算配置则放在 `research_config.yaml` 中。详情请参阅[配置指南](https://ruc-nlpir.github.io/Arbor/docs/configuration/)和 [`examples/research_config.example.yaml`](https://claude.ai/chat/examples/research_config.example.yaml)。
+通过 `arbor setup` 一次性配置 LLM 访问（存储在 `~/.arbor/config.yaml`），只需填写一个 `provider` 字段：
+
+| `provider` | 适用场景 |
+| --- | --- |
+| `auto`（默认） | 交给 Arbor 自动判断：探测端点的 OpenAI **Responses** API，支持就用（保留思维链），否则回退到 chat completions；Claude 模型走原生 Anthropic API。探测结果会被冻结写入配置。 |
+| `openai-responses` | OpenAI / o 系列模型，走 Responses API（跨轮保留加密思维链）。 |
+| `openai-chat` | 任何 OpenAI 兼容的 chat-completions 端点——DeepSeek / Qwen / GLM / vLLM / Ollama / 本地网关。 |
+| `anthropic` | Claude，走原生 Anthropic Messages API（签名思维块 + 提示缓存）。 |
+
+大多数用户只需运行 `arbor setup`、保持 `auto`、填好 `model` 与 `base_url` 即可。API 密钥从环境变量或配置文件中读取；针对具体项目的任务和预算配置则放在 `research_config.yaml` 中。详情请参阅[配置指南](https://ruc-nlpir.github.io/Arbor/docs/configuration/)和 [`examples/research_config.example.yaml`](examples/research_config.example.yaml)。
 
 ------
 
