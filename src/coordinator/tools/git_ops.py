@@ -127,7 +127,14 @@ async def _run_eval_in_worktree(
     """
     import tempfile
 
-    worktree_base = Path(tempfile.gettempdir()) / f"merge-eval-worktrees-{os.getuid()}"
+    import getpass
+
+    try:
+        _raw = str(os.getuid()) if hasattr(os, "getuid") else getpass.getuser()
+    except (OSError, KeyError):
+        _raw = "user"
+    _uid = re.sub(r"[^A-Za-z0-9_.-]", "_", _raw) or "user"
+    worktree_base = Path(tempfile.gettempdir()) / f"merge-eval-worktrees-{_uid}"
     worktree_base.mkdir(parents=True, exist_ok=True)
 
     dir_name = source_branch.replace("/", "__").replace(".", "_")

@@ -239,7 +239,15 @@ async def _create_worktree(cwd: str, branch_name: str, start_point: str | None =
     """
     import tempfile
 
-    worktree_base = Path(tempfile.gettempdir()) / f"coordinator-worktrees-{os.getuid()}"
+    import getpass
+    import re
+
+    try:
+        _raw = str(os.getuid()) if hasattr(os, "getuid") else getpass.getuser()
+    except Exception:
+        _raw = "user"
+    _uid = re.sub(r"[^A-Za-z0-9_.-]", "_", _raw) or "user"
+    worktree_base = Path(tempfile.gettempdir()) / f"coordinator-worktrees-{_uid}"
     worktree_base.mkdir(parents=True, exist_ok=True)
 
     dir_name = _worktree_dir_name(branch_name)
