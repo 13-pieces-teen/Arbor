@@ -8,7 +8,16 @@ quietly disagree.
 
 from __future__ import annotations
 
-VALID_PROVIDERS = {"anthropic", "openai", "litellm"}
+# User-facing provider menu (setup wizard + `config init --provider`), in
+# display order. Each is a single-axis value that maps 1:1 onto a backend, so
+# the config file reads the same as the menu. `auto` resolves to one of the
+# concrete three at setup time.
+PROVIDER_CHOICES = ("auto", "openai-responses", "openai-chat", "anthropic")
+
+# Concrete providers Arbor can store + serve after `auto` is resolved. `litellm`
+# stays a valid backend for back-compat / advanced hand-edited configs, but is
+# no longer advertised in the menu.
+_BACKEND_PROVIDERS = {"anthropic", "openai-responses", "openai-chat", "litellm"}
 VALID_OPENAI_APIS = {"chat", "responses"}
 
 # Intake-agent LLM call budget — seeded into the agent config by ``run`` and
@@ -33,33 +42,40 @@ DEFAULT_CLAUDE_MODEL = "claude-sonnet-4-20250514"
 DEFAULT_WEBUI_PORT = 8765
 WEBUI_PORT_SCAN = 10
 
-_OPENAI_FAMILY = ("openai", "litellm")
 
+def canonical_provider(provider: str | None, openai_api: str | None = None) -> str:
+    """Collapse any provider alias onto a single canonical, single-axis value.
 
-def normalize_provider(provider: str | None, openai_api: str | None = None) -> str:
-    """Return the canonical provider name stored in config files.
-
-    User-facing setup uses one axis only: anthropic | openai | litellm.
-    ``openai`` defaults to the Responses API; advanced configs may still set
-    ``openai_api: chat`` in YAML for chat-only endpoints.
+    Returns one of ``auto`` | ``anthropic`` | ``openai-responses`` |
+    ``openai-chat`` | ``litellm``. The legacy two-axis form (``openai`` plus
+    ``openai_api: chat|responses``) folds into the matching ``openai-*`` value,
+    so newly written configs only ever carry the single ``provider`` field.
     """
     p = (provider or "anthropic").strip().lower()
-    if p == "claude":
+    api = (openai_api or "").strip().lower()
+    if p == "auto":
+        return "auto"
+    if p in ("claude", "anthropic"):
         return "anthropic"
-    if p in ("openai", "openai-responses", "openai-chat", "responses", "chat", "openai_response", "openai_compat"):
-        return "openai"
-    return p
+    if p == "litellm":
+        return "litellm"
+    if p in ("openai-chat", "chat", "openai_compat", "openai_chat"):
+        return "openai-chat"
+    if p in ("openai-responses", "responses", "openai_responses", "openai_response"):
+        return "openai-responses"
+    if p == "openai":  # legacy bare provider: respect the openai_api axis
+        return "openai-chat" if api == "chat" else "openai-responses"
+    return p  # unknown → passthrough; resolve_backend decides or errors later
 
 
 def default_model_for_provider(provider: str | None) -> str | None:
     """Default model for ``provider``, or ``None`` to defer to the provider.
 
-    Claude/Anthropic return ``None`` because the provider supplies its own
-    default; only the OpenAI family and litellm need an explicit model here.
-    Callers that must persist a concrete string (e.g. writing a config file)
-    substitute :data:`DEFAULT_CLAUDE_MODEL` when this returns ``None``.
+    ``anthropic``/``auto`` return ``None`` because Claude supplies its own
+    default; the OpenAI family and litellm need an explicit model here. Callers
+    that must persist a concrete string substitute :data:`DEFAULT_CLAUDE_MODEL`.
     """
-    provider = normalize_provider(provider)
-    if provider in _OPENAI_FAMILY:
+    canon = canonical_provider(provider)
+    if canon.startswith("openai") or canon == "litellm":
         return DEFAULT_OPENAI_MODEL
     return None

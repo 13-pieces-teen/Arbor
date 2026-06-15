@@ -10,10 +10,12 @@
 # ─────────────────────────────────────────────────────────────────────────────
 
 llm:
-  # The API type configured by `arbor setup` uses the same provider names:
+  # `provider` is the API type chosen by `arbor setup`:
+  #   auto             — probe the endpoint; use the Responses API when available,
+  #                      else chat completions (Claude → native Anthropic)
+  #   openai-responses — OpenAI / o-series via the Responses API (reasoning chain)
+  #   openai-chat      — any OpenAI-compatible chat-completions endpoint
   #   anthropic        — native Anthropic Messages API (thinking + caching)
-  #   openai           — native OpenAI Responses API by default
-  #   litellm          — unified transport for every chat model / proxy
 
   provider: anthropic
   model: claude-sonnet-4-20250514
@@ -45,29 +47,36 @@ ui:
 # ─────────────────────────────────────────────────────────────────────────────
 #
 # OpenAI gpt-5 with the reasoning chain preserved (Responses API):
-#   provider: openai
+#   provider: openai-responses
 #   model: gpt-5.5
 #   reasoning_effort: high             # api_key from OPENAI_API_KEY env
 #
-# DeepSeek-R1 (litellm; reasoning_content carried back automatically):
-#   provider: litellm
-#   model: deepseek/deepseek-reasoner  # api_key from DEEPSEEK_API_KEY env
+# DeepSeek (chat completions; reasoning_content shown live):
+#   provider: openai-chat
+#   model: deepseek-reasoner           # or deepseek-chat
+#   base_url: https://api.deepseek.com
+#   api_key: sk-...
+#
+# Qwen via Alibaba DashScope — let `auto` probe Responses vs chat:
+#   provider: auto
+#   model: qwen3.7-max
+#   base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
+#   api_key: sk-...
 #
 # Self-hosted vLLM / Ollama (chat-only endpoint):
-#   provider: openai
+#   provider: openai-chat
 #   model: Qwen/Qwen2.5-72B-Instruct
 #   base_url: http://localhost:8000/v1
 #   api_key: dummy
-#   openai_api: chat
 #
-# A litellm proxy serving gpt-5.5 (chain via Responses):
-#   provider: openai
+# A local proxy serving gpt-5.5 via the Responses API:
+#   provider: openai-responses
 #   model: gpt-5.5
-#   base_url: http://your-litellm-proxy/v1
+#   base_url: http://your-proxy/v1
 #   api_key: sk-...
 #
-# A Copilot-style proxy serving claude / gemini (chain via litellm opaque token):
-#   provider: litellm                  # or auto
+# A Copilot-style proxy serving claude / gemini — `auto` picks the backend:
+#   provider: auto
 #   model: gemini-3.1-pro-preview
 #   base_url: http://localhost:4141/v1
 #   api_key: dummy

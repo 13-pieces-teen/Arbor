@@ -11,9 +11,10 @@ import yaml
 from ..._app import GLOBAL_CONFIG_DIR, GLOBAL_CONFIG_FILE, LEGACY_GLOBAL_CONFIG_FILE
 from .._constants import (
     DEFAULT_CLAUDE_MODEL,
-    VALID_PROVIDERS,
+    PROVIDER_CHOICES,
+    _BACKEND_PROVIDERS,
+    canonical_provider,
     default_model_for_provider,
-    normalize_provider,
 )
 
 
@@ -46,8 +47,9 @@ def show_command(
 @config_app.command("init")
 def init_command(
     provider: str = typer.Option(
-        "anthropic", "--provider",
-        help="API type: anthropic / openai / litellm. OpenAI defaults to Responses API.",
+        "auto", "--provider",
+        help="API type: auto / openai-responses / openai-chat / anthropic. "
+             "auto probes the endpoint and picks the best backend.",
     ),
     model: str | None = typer.Option(None, "--model",
                                      help="Model name. Defaults to a provider-appropriate model."),
@@ -61,22 +63,27 @@ def init_command(
 
     Examples:
 
-            # local proxy serving a gpt-5.x / o-series model (uses Responses API)
-            arbor config init --provider openai --model gpt-5.5 \
+            # auto — let Arbor probe the endpoint and pick the best backend
+            # (recommended for DeepSeek / Qwen / GLM and other OpenAI-compatible APIs)
+            arbor config init --provider auto --model deepseek-reasoner \
+                --base-url https://api.deepseek.com --api-key sk-...
+
+            # OpenAI / o-series via the Responses API (reasoning chain preserved)
+            arbor config init --provider openai-responses --model gpt-5.5 \
                 --base-url http://localhost:4141 --api-key dummy
 
-            # local proxy serving an open-source model via litellm
-            arbor config init --provider litellm --model qwen-72b \
-                --base-url http://localhost:4141 --api-key dummy
+            # any OpenAI-compatible chat-completions endpoint
+            arbor config init --provider openai-chat --model qwen3.7-max \
+                --base-url https://dashscope.aliyuncs.com/compatible-mode/v1 --api-key sk-...
 
               # Claude via Anthropic with env-var ANTHROPIC_API_KEY
               arbor config init --provider anthropic --model claude-sonnet-4-20250514
     """
-    provider = normalize_provider(provider)
-
-    if provider not in VALID_PROVIDERS:
+    canon = canonical_provider(provider)
+    if canon != "auto" and canon not in _BACKEND_PROVIDERS:
         typer.secho(
-            f"error: --provider must be anthropic, openai, or litellm (got {provider!r})",
+            "error: --provider must be one of "
+            f"{' / '.join(PROVIDER_CHOICES)} (got {provider!r})",
             fg=typer.colors.RED,
             err=True,
         )
@@ -89,8 +96,8 @@ def init_command(
 
     GLOBAL_CONFIG_DIR.mkdir(parents=True, exist_ok=True)
 
-    resolved_model = model or default_model_for_provider(provider) or DEFAULT_CLAUDE_MODEL
-    llm: dict[str, str] = {"provider": provider, "model": resolved_model}
+    resolved_model = model or default_model_for_provider(canon) or DEFAULT_CLAUDE_MODEL
+    llm: dict[str, str] = {"provider": canon, "model": resolved_model}
     if base_url:
         llm["base_url"] = base_url
     if api_key:
@@ -106,21 +113,38 @@ def write_user_llm_config(llm: dict[str, Any]) -> None:
     both produce the same file shape. Callers own the "exists + not --force" guard
     and the ``GLOBAL_CONFIG_DIR.mkdir`` is repeated here so the wizard can call
     this directly without depending on init's prologue.
+
+    When ``provider`` is ``auto`` it is resolved to a concrete backend here (a
+    one-shot Responses-API probe for non-Claude endpoints) and the *resolved*
+    value is what gets written, so the runtime never has to probe.
     """
     GLOBAL_CONFIG_DIR.mkdir(parents=True, exist_ok=True)
     llm = dict(llm)
-    original_provider = str(llm.get("provider") or "anthropic")
     original_openai_api = str(llm.pop("openai_api", "") or "") or None
-    llm["provider"] = normalize_provider(
-        original_provider,
-        original_openai_api,
-    )
-    if original_provider.lower() in {"openai-chat", "chat", "openai_compat"}:
-        llm["openai_api"] = "chat"
-    elif original_openai_api and original_openai_api.lower() == "chat":
-        llm["openai_api"] = "chat"
     if llm.get("base_url"):
         llm["base_url"] = _normalize_base_url(str(llm["base_url"]))
+
+    # provider=auto: resolve to a concrete backend now (once) and freeze it, so
+    # the runtime path stays pure (no per-run probing). Non-Claude endpoints are
+    # probed for the Responses API — `openai-responses` when present (reasoning
+    # chain preserved across turns), else `openai-chat` (chat completions).
+    if (str(llm.get("provider") or "")).strip().lower() == "auto":
+        from .._autodetect import resolve_auto_provider
+
+        typer.secho("auto: detecting the best backend for this endpoint…", fg=typer.colors.CYAN)
+        resolved, reason = resolve_auto_provider(
+            model=str(llm.get("model") or ""),
+            base_url=llm.get("base_url"),
+            api_key=llm.get("api_key"),
+        )
+        typer.secho(f"auto: {reason} (provider={resolved})", fg=typer.colors.CYAN)
+        llm["provider"] = resolved
+
+    # Store a single canonical, single-axis provider so the file reads the same
+    # as the menu (e.g. `openai-chat`, not `openai` + `openai_api: chat`). Legacy
+    # two-axis input still folds in via `original_openai_api`.
+    llm["provider"] = canonical_provider(llm.get("provider"), original_openai_api)
+
     payload = {"llm": llm}
     GLOBAL_CONFIG_FILE.write_text(
         yaml.safe_dump(payload, sort_keys=False, default_flow_style=False),

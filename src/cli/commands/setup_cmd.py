@@ -15,7 +15,7 @@ import typer
 from ..._app import GLOBAL_CONFIG_FILE
 from .._constants import (
     DEFAULT_CLAUDE_MODEL,
-    VALID_PROVIDERS,
+    PROVIDER_CHOICES,
     default_model_for_provider,
 )
 from .config_cmd import write_user_llm_config
@@ -42,10 +42,18 @@ def run_setup_wizard(*, force: bool = False) -> bool:
                    f"{GLOBAL_CONFIG_FILE}.[/]\n")
 
     # 1. API type / provider
+    _console.print(
+        "[dim]API type:\n"
+        "  [bold]auto[/bold]             let Arbor detect it — probes the endpoint's Responses\n"
+        "                   API and uses it when available, else chat completions\n"
+        "  [bold]openai-responses[/bold] OpenAI / o-series via the Responses API (reasoning chain)\n"
+        "  [bold]openai-chat[/bold]      any OpenAI-compatible endpoint (DeepSeek / Qwen / GLM / …)\n"
+        "  [bold]anthropic[/bold]        Claude via the native Anthropic API[/]"
+    )
     provider = _prompt_choice(
         "API type",
-        choices=sorted(VALID_PROVIDERS),
-        default="anthropic",
+        choices=list(PROVIDER_CHOICES),
+        default="auto",
     )
 
     # 2. base_url (local proxy / vLLM / official API)
