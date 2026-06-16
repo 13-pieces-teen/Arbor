@@ -540,6 +540,15 @@ async def _run_single_executor(
         "branch": code_ref,
         "status": new_status,
     })
+    # The evaluation phase concluded with this node's outcome. `error` marks an
+    # eval that was attempted but produced no metric (vs. a clean score or an
+    # intentional skip), which the stats collector counts as an eval failure.
+    tree.bus.emit(ev.EVAL_END, {
+        "node_id": node_id,
+        "score": score,
+        "duration": duration,
+        "error": eval_status == "failed_to_run",
+    })
     tree.bus.emit(ev.CYCLE_END, {
         "cycle_num": cycle_num,
         "total_cycles": config.max_cycles,
@@ -626,6 +635,34 @@ async def _review_gate(
     if low.startswith("edit "):
         text = text[5:].strip()
     return ("approve", text or None)
+
+
+def _react_convergence(
+    detector: Any,
+    tree: "IdeaTree",
+    config: "CoordinatorConfig",
+    result: str,
+    signal: Any,
+) -> str:
+    """React to a convergence ``signal`` after experiment(s) complete.
+
+    Appends the intervention text to ``result`` and, on a hard ``stop``, writes
+    the stop signal and emits ``CONVERGENCE_REACHED`` so the dashboard/log/report
+    learn why the run is winding down. No-op when there is no signal. Shared by
+    the single and parallel executor tools so the reaction lives in one place.
+    """
+    if not signal:
+        return result
+    result += f"\n\n---\n{detector.format_intervention(signal)}\n---"
+    if signal.level == "stop":
+        detector.write_stop_signal(config.workspace_dir)
+        from ...events import types as ev
+        best = tree.get_best_done_node()
+        tree.bus.emit(ev.CONVERGENCE_REACHED, {
+            "reason": signal.reason,
+            "final_score": best.score if best is not None else tree.meta.get("trunk_score"),
+        })
+    return result
 
 
 # ---------------------------------------------------------------------------
@@ -720,11 +757,9 @@ class RunExecutorTool(Tool):
         # Check convergence after experiment completion
         if self._convergence_detector:
             signal = self._convergence_detector.on_experiment_complete(kwargs["node_id"])
-            if signal:
-                intervention = self._convergence_detector.format_intervention(signal)
-                result += f"\n\n---\n{intervention}\n---"
-                if signal.level == "stop":
-                    self._convergence_detector.write_stop_signal(self._config.workspace_dir)
+            result = _react_convergence(
+                self._convergence_detector, self._tree, self._config, result, signal
+            )
         return result
 
 
@@ -813,11 +848,9 @@ class ResumeExecutorTool(RunExecutorTool):
         )
         if self._convergence_detector:
             signal = self._convergence_detector.on_experiment_complete(node_id)
-            if signal:
-                intervention = self._convergence_detector.format_intervention(signal)
-                result += f"\n\n---\n{intervention}\n---"
-                if signal.level == "stop":
-                    self._convergence_detector.write_stop_signal(self._config.workspace_dir)
+            result = _react_convergence(
+                self._convergence_detector, self._tree, self._config, result, signal
+            )
         return result
 
 class RunExecutorParallelTool(Tool):
@@ -1012,10 +1045,8 @@ class RunExecutorParallelTool(Tool):
             signal = None
             for task in tasks:
                 signal = self._convergence_detector.on_experiment_complete(task["node_id"])
-            if signal:
-                intervention = self._convergence_detector.format_intervention(signal)
-                combined += f"\n\n---\n{intervention}\n---"
-                if signal.level == "stop":
-                    self._convergence_detector.write_stop_signal(self._config.workspace_dir)
+            combined = _react_convergence(
+                self._convergence_detector, self._tree, self._config, combined, signal
+            )
 
         return combined
