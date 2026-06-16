@@ -5,6 +5,12 @@
 启动 `arbor` 时的一段简短**接入对话（intake chat）**里确定。无需手写 YAML，无需撰写评测契约，
 **也不需要 README**。
 
+!!! tip "想边看例子边学？"
+    [`examples/algotune_knn`](https://github.com/RUC-NLPIR/Arbor/tree/main/examples/algotune_knn)
+    是一个小而可运行的基准，已经遵循了下面的全部要点——一个可编辑的 `solution.py`、
+    一个打印 `score:` 的受保护 `eval.sh`，以及互不重叠的 dev/test 种子。在动手搭建
+    自己的基准之前，这是最快理解“基准长什么样”的方式。
+
 ## 1. 一个可评分的基线仓库
 
 把你的代码和数据放在一个目录里——通常就是你已有的仓库：

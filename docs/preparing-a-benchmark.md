@@ -6,6 +6,12 @@ what the metric means, what's off-limits, how ambitious to be — you settle in 
 **intake chat** when you launch `arbor`. No hand-written YAML, no eval contract to author,
 and **no README required**.
 
+!!! tip "Prefer to learn by example?"
+    [`examples/algotune_knn`](https://github.com/RUC-NLPIR/Arbor/tree/main/examples/algotune_knn)
+    is a tiny, runnable benchmark that already follows everything below — an editable
+    `solution.py`, a protected `eval.sh` that prints `score:`, and disjoint dev/test
+    seeds. It's the fastest way to see the shape of a benchmark before wiring up your own.
+
 ## 1. A scorable baseline repo
 
 Put your code and data in one directory — typically the repo you already have:

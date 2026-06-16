@@ -51,6 +51,19 @@ arbor
 README，确认指标与基线，帮你完善出一个计划，待双方达成一致后启动研究。之后你便留在同一个终端中
 ——观察进度，并用斜杠命令引导运行。
 
+!!! tip "还没有项目？试试自带的示例"
+    想要一次**不耗 API、不需 GPU、亚秒级**且能完整旁观的运行，可以用
+    [`examples/algotune_knn`](https://github.com/RUC-NLPIR/Arbor/tree/main/examples/algotune_knn)
+    任务——在匹配参考输出的前提下，让一个暴力 k-NN 求解器跑得更快。请在你的 Arbor
+    仓库**之外**运行它，以免实验 worktree 影响该仓库：
+
+    ```bash
+    cp -r examples/algotune_knn /tmp/algotune_knn
+    cd /tmp/algotune_knn
+    git init -q && git add -A && git commit -qm baseline
+    arbor
+    ```
+
 !!! tip "一开始就给出目标"
     你可以把目标作为第一个参数传入，并仍然走接入流程：
 

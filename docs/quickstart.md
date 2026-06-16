@@ -52,6 +52,19 @@ reads your code and README, confirms the metric and baseline, helps you shape a 
 then launches the study once you both agree. From there you stay in the same terminal —
 watching progress and steering the run with slash commands.
 
+!!! tip "No project yet? Try the bundled example"
+    For a no-API-budget, no-GPU, sub-second run you can watch end-to-end, use the
+    [`examples/algotune_knn`](https://github.com/RUC-NLPIR/Arbor/tree/main/examples/algotune_knn)
+    task — make a brute-force k-NN solver faster while matching the reference output.
+    Run it **outside** your Arbor checkout so experiment worktrees don't touch that repo:
+
+    ```bash
+    cp -r examples/algotune_knn /tmp/algotune_knn
+    cd /tmp/algotune_knn
+    git init -q && git add -A && git commit -qm baseline
+    arbor
+    ```
+
 !!! tip "Seed the goal up front"
     You can pass your objective as the first argument and still go through intake:
 
