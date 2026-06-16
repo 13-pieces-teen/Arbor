@@ -234,6 +234,7 @@ ROOT（基线：20%）
 | `arbor`                  | 启动交互式研究会话。                                        |
 | `arbor setup`            | 配置模型提供商 / 模型 / API 密钥 → `~/.arbor/config.yaml`。 |
 | `arbor report <session>` | 重新渲染某次历史会话的 `REPORT.md`。                        |
+| `arbor export <session> [output]` | 将历史会话导出为自包含 HTML；当 `output` 以 `.jsonl` 结尾时导出 JSONL。 |
 | `arbor doctor`           | 诊断安装状态、PATH、git 及 API 密钥。                       |
 | `arbor version`          | 打印已安装的版本号。                                        |
 
@@ -259,6 +260,8 @@ plugin: mle_kaggle   # 切换到 Kaggle/MLE 模式
 
 ```bash
 arbor report .arbor/sessions/<run_name>   # 重新渲染历史报告
+arbor export <run_name>                   # 写入 .arbor/sessions/<run_name>/arbor-session-<run_name>.html
+arbor export <run_name> session.jsonl     # 导出 JSONL 产物包
 arbor --resume --run-name <run_name>      # 继续中断的运行
 ```
 

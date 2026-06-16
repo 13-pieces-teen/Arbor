@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import datetime
 import os
+import shlex
 import sys
 import threading
 import time
@@ -230,6 +231,7 @@ _DASHBOARD_COMMANDS: list[tuple[str, str]] = [
     ("/pause", "ask the agent to pause after the current step"),
     ("/resume", "resume after /pause"),
     ("/report", "show session/report artifact paths"),
+    ("/export", "export session to HTML, or .jsonl when path ends with .jsonl"),
     ("/abort", "abort the run"),
     ("/quit", "abort the run"),
 ]
@@ -1152,6 +1154,37 @@ class RunDashboard:
             ]
             self._print_command_output("artifacts", rows)
             return
+        if cmd == "/export":
+            payload = line[len("/export"):].strip()
+            if not self.state.session_dir:
+                self._print_command_output("export", ["[yellow]no session directory is available yet[/]"])
+                return
+            try:
+                parts = shlex.split(payload) if payload else []
+            except ValueError as exc:
+                self._print_command_output(
+                    "export",
+                    ["[yellow]usage: /export [path.html|path.jsonl][/]", f"[red]{escape(str(exc))}[/]"],
+                )
+                return
+            if len(parts) > 1:
+                self._print_command_output("export", ["[yellow]usage: /export [path.html|path.jsonl][/]"])
+                return
+            try:
+                from ..export import export_session
+                output = Path(parts[0]).expanduser() if parts else None
+                result = export_session(Path(self.state.session_dir), output)
+            except Exception as exc:
+                self._print_command_output("export", [f"[red]failed:[/] {escape(str(exc))}"])
+                return
+            self._print_command_output(
+                "export",
+                [
+                    f"[green]{escape(result.format.upper())} written[/]",
+                    f"[dim]{escape(str(result.path))}[/]",
+                ],
+            )
+            return
         if cmd == "/pause":
             self.state.paused = True
             self.state.push_control_message(
@@ -1217,7 +1250,7 @@ class RunDashboard:
                 return
             dashboard_commands = {
                 "/help", "/status", "/cost", "/tree", "/evidence", "/reply", "/chart",
-                "/branches", "/report", "/pause", "/resume", "/skill", "/abort", "/quit",
+                "/branches", "/report", "/export", "/pause", "/resume", "/skill", "/abort", "/quit",
             }
             if cmd in dashboard_commands:
                 self._handle_slash_command(line)

@@ -299,6 +299,7 @@ Day to day you only need `arbor`:
 | `arbor` | Start an interactive research session. |
 | `arbor setup` | Configure provider / model / keys → `~/.arbor/config.yaml`. |
 | `arbor report <session>` | Re-render `REPORT.md` for a past session. |
+| `arbor export <session> [output]` | Export a past session to self-contained HTML, or JSONL when `output` ends in `.jsonl`. |
 | `arbor doctor` | Diagnose install, PATH, git, and API keys. |
 | `arbor version` | Print the installed version. |
 
@@ -332,6 +333,8 @@ picks up where it left off.
 
 ```bash
 arbor report .arbor/sessions/<run_name>   # re-render a past report
+arbor export <run_name>                   # write .arbor/sessions/<run_name>/arbor-session-<run_name>.html
+arbor export <run_name> session.jsonl     # export a JSONL artifact bundle
 arbor --resume --run-name <run_name>      # continue an interrupted run
 ```
 
