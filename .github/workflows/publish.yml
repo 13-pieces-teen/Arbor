@@ -46,8 +46,23 @@ jobs:
         with:
           name: dist
           path: dist/
-      - name: Create GitHub Release with auto-generated notes
+      - name: Check whether a Release already exists for this tag
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # If you drafted the Release on the web before pushing the tag, it
+          # already exists here and has your hand-written notes.
+          if gh release view "${GITHUB_REF_NAME}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Create or update GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          generate_release_notes: true   # auto-summarize merged PRs since the last tag
+          # Auto-generate notes ONLY when this workflow is creating the Release
+          # (i.e. you pushed a bare tag). If you already wrote notes on the web,
+          # we leave them untouched and just attach the build artifacts.
+          generate_release_notes: ${{ steps.check.outputs.exists == 'false' }}
           files: dist/*                  # attach the built wheel + sdist to the release
