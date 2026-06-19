@@ -32,7 +32,13 @@ see our [documentation](https://RUC-NLPIR.github.io/Arbor/docs/). 🧭 You can a
 choose the [CLI or Skill version](#-cli-and-skill-versions) depending on your
 environment and workflow.
 
-## 💡 Why Arbor
+## � News
+
+- **2026-06** — Arbor was featured by [VentureBeat](https://venturebeat.com/), one of the leading tech media outlets in the US: ["New AI optimization framework beats Claude Code and Codex by 2.5x on the same compute budget"](https://venturebeat.com/orchestration/new-ai-optimization-framework-beats-claude-code-and-codex-by-2-5x-on-the-same-compute-budget). 📰
+- **2026-06** — Arbor's native CLI runtime and Agent Skill Suite (Codex / Claude Code) are released. 🚀
+- **2026-06** — The Arbor paper is released on [arXiv](https://arxiv.org/abs/2606.11926). 🎉
+
+## �💡 Why Arbor
 
 * **General-purpose optimization** — From model training and harness engineering
   to data synthesis, Arbor can optimize any task as long as it has a target to

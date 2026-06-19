@@ -27,7 +27,13 @@
 
 更多详情，请访问我们的[项目主页](https://ruc-nlpir.github.io/Arbor/)并阅读[论文](https://arxiv.org/pdf/2606.11926)。如需详细的使用说明，请参阅[文档](https://ruc-nlpir.github.io/Arbor/docs/)。🧭 你也可以根据自己的环境和工作流选择使用 [CLI 版本或技能套件版本](https://claude.ai/chat/e7121091-ce2c-4970-a60f-16b54c453729#-cli-与技能套件版本)。
 
-## 💡 为什么选择 Arbor
+## � 最新动态
+
+- **2026-06** — Arbor 被美国知名科技媒体 [VentureBeat](https://venturebeat.com/) 报道：[《New AI optimization framework beats Claude Code and Codex by 2.5x on the same compute budget》](https://venturebeat.com/orchestration/new-ai-optimization-framework-beats-claude-code-and-codex-by-2-5x-on-the-same-compute-budget)。📰
+- **2026-06** — Arbor 原生 CLI 运行时与智能体技能套件（Codex / Claude Code）正式发布。🚀
+- **2026-06** — Arbor 论文在 [arXiv](https://arxiv.org/abs/2606.11926) 发布。🎉
+
+## �💡 为什么选择 Arbor
 
 - **通用优化能力** — 无论是模型训练、评测工程，还是数据合成，只要有明确的优化目标和可量化的评估指标，Arbor 都能胜任。
 - **真正落地可用的自主科研** — Arbor 不仅是一个研究原型，它同时提供原生 CLI 运行时和适用于 Codex 与 Claude Code 的智能体技能套件。你可以直接使用完整 CLI 以获得最佳效果，也可以在其他编程智能体中加载技能套件来使用。
