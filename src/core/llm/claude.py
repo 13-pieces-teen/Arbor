@@ -29,6 +29,13 @@ log = logging.getLogger(__name__)
 
 _MIN_THINKING_BUDGET_TOKENS = 1024
 
+# Claude model families that use the newer *adaptive* extended-thinking API
+# (server-controlled thinking) and reject the legacy explicit-budget shape
+# {"type": "enabled", "budget_tokens": N} with HTTP 400. For these we omit the
+# `thinking` param entirely and let the model apply its default adaptive
+# thinking. Matched as a substring so dated snapshots (…-YYYYMMDD) are covered.
+_ADAPTIVE_THINKING_MODEL_MARKERS = ("opus-4-7", "opus-4-8")
+
 
 class ClaudeProvider(LLMProvider):
     """LLM provider backed by the Anthropic Messages API."""
@@ -251,8 +258,22 @@ class ClaudeProvider(LLMProvider):
             last["content"] = blocks
         return out
 
+    def _uses_adaptive_thinking(self) -> bool:
+        """True for Claude models that require the adaptive thinking API instead
+        of the legacy explicit budget_tokens shape this provider emits."""
+        model = (self.model or "").lower()
+        return any(m in model for m in _ADAPTIVE_THINKING_MODEL_MARKERS)
+
     def _build_thinking_config(self, max_tokens: int) -> dict[str, Any] | None:
         """Map reasoning_effort onto Anthropic extended-thinking budget."""
+        # Newer models (Opus 4.7/4.8) dropped the explicit budget_tokens API and
+        # return HTTP 400 for it; omit `thinking` so they use adaptive thinking.
+        if self._uses_adaptive_thinking():
+            log.debug(
+                "Skipping explicit thinking config for adaptive-thinking model %s",
+                self.model,
+            )
+            return None
         if self.reasoning_effort is None and self.thinking_budget_tokens is None:
             return None
 
