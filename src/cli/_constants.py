@@ -34,7 +34,7 @@ INTAKE_LLM_RETRY_MAX_DELAY = 2.0
 INTAKE_REASONING_EFFORT = "low"
 
 DEFAULT_OPENAI_MODEL = "gpt-4o"
-DEFAULT_OPENAI_OAUTH_MODEL = "gpt-5"
+DEFAULT_OPENAI_OAUTH_MODEL = "gpt-5.5"
 DEFAULT_CLAUDE_MODEL = "claude-sonnet-4-20250514"
 
 # Read-only WebUI: the browser monitor binds here by default for interactive

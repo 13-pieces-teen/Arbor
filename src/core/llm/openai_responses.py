@@ -72,6 +72,20 @@ class OpenAIResponsesProvider(LLMProvider):
         tools: list[dict[str, Any]] | None = None,
         max_tokens: int = 16384,
     ) -> LLMResponse:
+        params = self._build_request_params(
+            system=system, messages=messages, tools=tools, max_tokens=max_tokens,
+        )
+        raw = await self._client.responses.create(**params)
+        return self._parse_response(raw)
+
+    def _build_request_params(
+        self,
+        *,
+        system: str,
+        messages: list[dict[str, Any]],
+        tools: list[dict[str, Any]] | None,
+        max_tokens: int,
+    ) -> dict[str, Any]:
         input_items = self._convert_messages(messages)
 
         params: dict[str, Any] = {
@@ -103,8 +117,7 @@ class OpenAIResponsesProvider(LLMProvider):
             if self.parallel_tool_calls is not None:
                 params["parallel_tool_calls"] = self.parallel_tool_calls
 
-        raw = await self._client.responses.create(**params)
-        return self._parse_response(raw)
+        return params
 
     def count_tokens(self, text: str) -> int:
         return len(self._enc.encode(text))

@@ -39,7 +39,7 @@ def test_resolve_backend_recognizes_oauth():
 def test_canonical_and_default_model():
     assert canonical_provider("openai-oauth") == "openai-oauth"
     assert canonical_provider("chatgpt") == "openai-oauth"
-    assert default_model_for_provider("openai-oauth") == "gpt-5"
+    assert default_model_for_provider("openai-oauth") == "gpt-5.5"
 
 
 # ── JWT claim parsing ────────────────────────────────────────────────────────
@@ -134,3 +134,61 @@ def test_provider_builds_chatgpt_client(monkeypatch):
     # The backend routing header must be present on the client.
     headers = provider._client.default_headers
     assert headers.get("chatgpt-account-id") == "acc-1"
+
+
+def test_create_reassembles_streamed_items(monkeypatch):
+    """The codex backend leaves completed.output empty and streams items via
+    ``output_item.done``; create() must collect those into the response."""
+    import asyncio
+    from types import SimpleNamespace
+
+    from arbor.core.llm.openai_oauth import OpenAIOAuthProvider
+
+    fake = oauth.OpenAITokens(
+        access_token="tok", refresh_token="rt", account_id="acc-1",
+        plan_type="pro", expires_at=time.time() + 3600,
+    )
+    monkeypatch.setattr(oauth, "get_valid_tokens", lambda: fake)
+    provider = OpenAIOAuthProvider(model="gpt-5.5")
+
+    events = [
+        SimpleNamespace(
+            type="response.output_item.done",
+            item={"type": "function_call", "call_id": "call_1",
+                  "name": "get_weather", "arguments": '{"city": "Paris"}'},
+        ),
+        SimpleNamespace(
+            type="response.completed",
+            response=SimpleNamespace(
+                output=[],  # codex leaves this empty on purpose
+                usage=SimpleNamespace(input_tokens=12, output_tokens=7),
+                model="gpt-5.5", status="completed",
+                incomplete_details=None, output_text="",
+            ),
+        ),
+    ]
+
+    async def fake_create(**params):
+        assert params["stream"] is True
+        assert "max_output_tokens" not in params  # codex rejects it
+
+        async def gen():
+            for ev in events:
+                yield ev
+
+        return gen()
+
+    provider._client.responses.create = fake_create  # type: ignore[assignment]
+
+    result = asyncio.run(provider.create(
+        system="s", messages=[{"role": "user", "content": "weather in Paris?"}],
+        tools=[{"name": "get_weather", "description": "w",
+                "input_schema": {"type": "object", "properties": {}}}],
+    ))
+
+    assert result.stop_reason == "tool_use"
+    tool_calls = [b for b in result.content if getattr(b, "name", None) == "get_weather"]
+    assert tool_calls and tool_calls[0].input == {"city": "Paris"}
+    assert result.usage.input_tokens == 12
+    assert result.usage.output_tokens == 7
+
