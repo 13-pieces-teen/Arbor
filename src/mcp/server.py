@@ -17,6 +17,7 @@ stateless and safe to point at any project.
 
 from __future__ import annotations
 
+from functools import partial
 from pathlib import Path
 from typing import Any
 
@@ -58,11 +59,23 @@ def build_server() -> Any:
         RuntimeError: if the optional ``mcp`` SDK is not installed.
     """
     try:
+        import anyio
         from mcp.server.fastmcp import FastMCP
     except ModuleNotFoundError as exc:  # pragma: no cover - exercised via run()
         raise RuntimeError(_MISSING_SDK_HINT) from exc
 
     server = FastMCP("arbor")
+
+    async def _in_thread(func: Any, /, *args: Any, **kwargs: Any) -> Any:
+        """Run a blocking ``session_ops`` call on a worker thread.
+
+        FastMCP invokes *synchronous* tool functions inline on its asyncio event
+        loop, so a tool that spawns a child process (eval / git) would freeze the
+        whole server — it could not read stdin, respond, or be cancelled — until
+        the child exits. Offloading the blocking work keeps the server responsive
+        and cancellable while a long evaluation or merge runs.
+        """
+        return await anyio.to_thread.run_sync(partial(func, *args, **kwargs))
 
     # ── Idea Tree ────────────────────────────────────────────────────────────
 
@@ -124,7 +137,7 @@ def build_server() -> Any:
     # ── Evaluation ───────────────────────────────────────────────────────────
 
     @server.tool()
-    def eval_run(
+    async def eval_run(
         run_name: str, cmd: str, split: str = "dev", set_meta: str = "none",
         node_id: str | None = None, exec_cwd: str | None = None,
         timeout: int | None = None, cwd: str | None = None,
@@ -134,33 +147,37 @@ def build_server() -> Any:
         split: dev (B_dev) | test (B_test). set_meta: none | baseline | trunk |
         test_baseline | test_trunk.
         """
-        return ops.eval_run(
-            _cwd(cwd), run_name, cmd, split=split, set_meta=set_meta,
+        # Offloaded: the eval command can run for minutes; it must not block the
+        # server's event loop.
+        return await _in_thread(
+            ops.eval_run, _cwd(cwd), run_name, cmd, split=split, set_meta=set_meta,
             node_id=node_id, exec_cwd=exec_cwd, timeout=timeout,
         )
 
     # ── Worktrees ────────────────────────────────────────────────────────────
 
     @server.tool()
-    def worktree_create(
+    async def worktree_create(
         run_name: str, node_id: str, branch_prefix: str = "exp",
         branch: str | None = None, trunk: str | None = None, cwd: str | None = None,
     ) -> dict[str, Any]:
         """Create an isolated git worktree+branch for an experiment node."""
-        return ops.worktree_create(
-            _cwd(cwd), run_name, node_id,
+        # Offloaded: spawns git subprocesses (must not block the event loop).
+        return await _in_thread(
+            ops.worktree_create, _cwd(cwd), run_name, node_id,
             branch_prefix=branch_prefix, branch=branch, trunk=trunk,
         )
 
     @server.tool()
-    def worktree_remove(worktree: str, cwd: str | None = None) -> dict[str, Any]:
+    async def worktree_remove(worktree: str, cwd: str | None = None) -> dict[str, Any]:
         """Force-remove a previously created experiment worktree."""
-        return ops.worktree_remove(_cwd(cwd), worktree)
+        # Offloaded: spawns git subprocesses (must not block the event loop).
+        return await _in_thread(ops.worktree_remove, _cwd(cwd), worktree)
 
     # ── Guarded merge ────────────────────────────────────────────────────────
 
     @server.tool()
-    def git_merge_branch(
+    async def git_merge_branch(
         run_name: str, node_id: str, source_branch: str,
         target_branch: str | None = None, test_score: float | None = None,
         protected_paths: list[str] | None = None, required_outputs: list[str] | None = None,
@@ -173,8 +190,10 @@ def build_server() -> Any:
         improvement over trunk/baseline, no protected-path changes, and presence
         of every required output. Use dry_run to check guards without merging.
         """
-        return ops.git_merge_branch(
-            _cwd(cwd), run_name, node_id, source_branch,
+        # Offloaded: spawns git subprocesses and may re-run a B_test eval (must
+        # not block the event loop).
+        return await _in_thread(
+            ops.git_merge_branch, _cwd(cwd), run_name, node_id, source_branch,
             target_branch=target_branch, test_score=test_score,
             protected_paths=protected_paths, required_outputs=required_outputs,
             commit_message=commit_message, timeout=timeout, dry_run=dry_run,

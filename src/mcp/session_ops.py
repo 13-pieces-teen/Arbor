@@ -98,15 +98,30 @@ def _user_tag() -> str:
 # ── git / shell primitives ────────────────────────────────────────────────────
 
 
+# Environment overlay for every git subprocess. ``GIT_TERMINAL_PROMPT=0`` makes
+# git fail fast instead of blocking on an interactive credential/auth prompt —
+# such a prompt would hang forever when launched from a stdio MCP server, which
+# has no real terminal to answer it.
+_GIT_ENV = {"GIT_TERMINAL_PROMPT": "0"}
+
+
 def git(cwd: str | Path, *argv: str) -> tuple[int, str]:
-    """Run ``git`` in *cwd*; return ``(returncode, combined_output)`` (stripped)."""
+    """Run ``git`` in *cwd*; return ``(returncode, combined_output)`` (stripped).
+
+    ``stdin`` is detached (``DEVNULL``) so the child never inherits — and blocks
+    reading on — the server's stdio JSON-RPC channel, and ``GIT_TERMINAL_PROMPT``
+    is disabled so git never stalls waiting for credentials. Both are required
+    for the command to be safe to launch from inside an MCP stdio server.
+    """
     proc = subprocess.run(
         ["git", *argv],
         cwd=str(cwd),
+        stdin=subprocess.DEVNULL,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
         check=False,
+        env={**os.environ, **_GIT_ENV},
     )
     return proc.returncode, proc.stdout.strip()
 
@@ -116,11 +131,14 @@ def _run_shell(cmd: str, cwd: str | Path, timeout: int) -> tuple[int, str, bool]
 
     ``TERM=dumb`` keeps progress bars from spamming ANSI escapes into the log.
     On timeout the child is killed and whatever it printed so far is preserved.
+    ``stdin`` is detached (``DEVNULL``) so a command that reads stdin gets EOF
+    immediately rather than blocking forever on the MCP server's stdio channel.
     """
     proc = subprocess.Popen(
         cmd,
         cwd=str(cwd),
         shell=True,
+        stdin=subprocess.DEVNULL,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,

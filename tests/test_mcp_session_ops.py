@@ -9,6 +9,7 @@ run on Linux CI.
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
 import pytest
@@ -120,6 +121,19 @@ def test_update_unknown_node_raises(tmp_path: Path) -> None:
 )
 def test_parse_score(text: str, expected: float | None) -> None:
     assert ops.parse_score(text) == expected
+
+
+def test_eval_run_detaches_stdin_and_does_not_hang(tmp_path: Path) -> None:
+    # Reproduces the MCP-server stall: a command that reads stdin must not block.
+    # With stdin detached (DEVNULL) the read returns EOF immediately instead of
+    # waiting forever on the server's stdio channel. The short timeout bounds a
+    # regression so it fails fast rather than hanging the suite.
+    py = sys.executable.replace("\\", "/")
+    cmd = f'"{py}" -c "import sys; sys.stdin.read(); print(\'score=1.0\')"'
+    out = ops.eval_run(tmp_path, "r", cmd, split="dev", timeout=30)
+    assert out["timed_out"] is False
+    assert out["returncode"] == 0
+    assert out["score"] == 1.0
 
 
 def test_eval_run_records_score_and_writes_log(tmp_path: Path) -> None:
