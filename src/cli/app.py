@@ -11,6 +11,7 @@ from .._app import APP_NAME, TAGLINE, TAGLINE_SUB
 from .commands.run import run_command
 from .commands.report_cmd import report_command
 from .commands.export_cmd import export_command
+from .commands.replay_cmd import replay_command
 from .commands.config_cmd import config_app
 from .commands.doctor_cmd import doctor_command
 from .commands.setup_cmd import setup_command
@@ -35,6 +36,7 @@ app = typer.Typer(
 app.command("run")(run_command)
 app.command("report")(report_command)
 app.command("export")(export_command)
+app.command("replay")(replay_command)
 app.command("doctor")(doctor_command)
 app.command("setup")(setup_command)
 app.add_typer(config_app, name="config")
@@ -51,7 +53,7 @@ def version_command() -> None:
     typer.echo(f"{APP_NAME} {ver}")
 
 
-_KNOWN_COMMANDS = {"run", "report", "export", "config", "version", "doctor", "setup"}
+_KNOWN_COMMANDS = {"run", "report", "export", "replay", "config", "version", "doctor", "setup"}
 _ROOT_FLAGS = {"--help", "-h"}
 _VERSION_FLAGS = {"--version", "-V"}
 

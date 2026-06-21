@@ -78,6 +78,7 @@ packages = [
 
 [tool.setuptools.package-data]
 "arbor" = ["skills/*.md", "py.typed"]
+"arbor.cli" = ["assets/demo_session/*"]
 "arbor.webui" = ["index.html"]
 "arbor.plugins" = ["*.yaml", "*.yml"]
 
