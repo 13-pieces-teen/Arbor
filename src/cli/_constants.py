@@ -22,11 +22,14 @@ VALID_OPENAI_APIS = {"chat", "responses"}
 
 # Intake-agent LLM call budget — seeded into the agent config by ``run`` and
 # applied directly by the REPL.
-INTAKE_LLM_TIMEOUT = 20.0
+# Some reasoning models (e.g. Claude Opus 4.x) take longer than 20s on the first
+# intake call, which made intake time out and report the model as unavailable.
+# Use a 120s budget with one extra retry so the intake call can complete.
+INTAKE_LLM_TIMEOUT = 120.0
 INTAKE_LLM_PROVIDER_RETRIES = 0
-INTAKE_LLM_RETRY_ATTEMPTS = 2
+INTAKE_LLM_RETRY_ATTEMPTS = 3
 INTAKE_LLM_RETRY_BASE_DELAY = 1.0
-INTAKE_LLM_RETRY_MAX_DELAY = 2.0
+INTAKE_LLM_RETRY_MAX_DELAY = 4.0
 
 # Intake is a planning conversation (read the eval, propose a contract), not a
 # deep-reasoning task — so it overrides the user's reasoning_effort (often
