@@ -82,6 +82,9 @@ def run_setup_wizard(*, force: bool = False) -> bool:
     if api_key:
         llm["api_key"] = api_key
 
+    # 5. reasoning effort (reasoning models / Claude thinking budget)
+    llm["reasoning_effort"] = _prompt_reasoning_effort()
+
     _console.print()
     write_user_llm_config(llm)
 
@@ -115,8 +118,11 @@ def _setup_openai_oauth() -> bool:
     _console.print(f"[green]✓[/] signed in to ChatGPT — plan=[bold]{plan}[/]")
 
     model = typer.prompt("Model", default=DEFAULT_OPENAI_OAUTH_MODEL).strip() or DEFAULT_OPENAI_OAUTH_MODEL
+    effort = _prompt_reasoning_effort(default="medium")
     _console.print()
-    write_user_llm_config({"provider": "openai-oauth", "model": model})
+    write_user_llm_config(
+        {"provider": "openai-oauth", "model": model, "reasoning_effort": effort}
+    )
     _console.print(
         f"\n[green]Done.[/] Saved to [bold]{GLOBAL_CONFIG_FILE}[/]. "
         "Just run [bold]arbor[/] to start a session.\n"
@@ -141,6 +147,20 @@ def _probe_credentials(provider: str, api_key: str | None) -> None:
             _console.print(f"  [dim]{result.hint}[/]")
     else:
         _console.print("[green]✓[/] credentials look resolvable")
+
+
+def _prompt_reasoning_effort(default: str = "high") -> str:
+    """Pick the reasoning effort (speed vs. depth) for the run loop."""
+    return _select_choice(
+        "Reasoning effort",
+        options=[
+            ("high", "most thorough planning — slowest (best quality)"),
+            ("medium", "balanced depth and speed"),
+            ("low", "light reasoning — fast, may weaken complex planning"),
+            ("none", "no reasoning — fastest, lowest quality"),
+        ],
+        default=default,
+    )
 
 
 def _select_choice(
