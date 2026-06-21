@@ -29,6 +29,17 @@ log = logging.getLogger(__name__)
 
 _MIN_THINKING_BUDGET_TOKENS = 1024
 
+# Claude model families that use the newer *adaptive* extended-thinking API
+# (server-controlled thinking) and reject the legacy explicit-budget shape
+# {"type": "enabled", "budget_tokens": N} with HTTP 400. For these we send
+# `thinking={"type": "adaptive"}` and map reasoning_effort onto
+# `output_config.effort` instead. Matched as a substring so dated snapshots
+# (…-YYYYMMDD) are covered.
+_ADAPTIVE_THINKING_MODEL_MARKERS = ("opus-4-7", "opus-4-8")
+
+# Effort levels accepted by the adaptive thinking `output_config.effort` field.
+_ADAPTIVE_EFFORT_LEVELS = frozenset({"low", "medium", "high", "xhigh", "max"})
+
 
 class ClaudeProvider(LLMProvider):
     """LLM provider backed by the Anthropic Messages API."""
@@ -212,9 +223,7 @@ class ClaudeProvider(LLMProvider):
             params["tools"] = tool_list
             params["tool_choice"] = {"type": "auto"}
 
-        thinking = self._build_thinking_config(max_tokens)
-        if thinking:
-            params["thinking"] = thinking
+        self._apply_thinking_params(params, max_tokens)
         return params
 
     @staticmethod
@@ -250,6 +259,51 @@ class ClaudeProvider(LLMProvider):
                     break
             last["content"] = blocks
         return out
+
+    def _uses_adaptive_thinking(self) -> bool:
+        """True for Claude models that require the adaptive thinking API instead
+        of the legacy explicit budget_tokens shape this provider emits."""
+        model = (self.model or "").lower()
+        return any(m in model for m in _ADAPTIVE_THINKING_MODEL_MARKERS)
+
+    def _adaptive_effort(self) -> str | None:
+        """Effort for adaptive-thinking models, or None to use the model default.
+
+        Prefers reasoning_effort; an unrecognized value (or only an explicit but
+        now-irrelevant budget) falls back to "medium" rather than dropping
+        thinking. Returns None only when neither knob is configured, mirroring
+        the legacy budget path's "no thinking requested" behavior.
+        """
+        effort = (self.reasoning_effort or "").lower()
+        if effort in _ADAPTIVE_EFFORT_LEVELS:
+            return effort
+        if self.reasoning_effort is not None or self.thinking_budget_tokens is not None:
+            return "medium"
+        return None
+
+    def _apply_thinking_params(self, params: dict[str, Any], max_tokens: int) -> None:
+        """Attach the appropriate thinking params for the target model in place.
+
+        Adaptive-thinking models (Opus 4.7/4.8) use `thinking.type=adaptive` plus
+        `output_config.effort`; the legacy explicit-budget shape they emitted
+        before returns HTTP 400. Older models keep the
+        `thinking.type=enabled` + budget_tokens path.
+        """
+        if self._uses_adaptive_thinking():
+            effort = self._adaptive_effort()
+            if effort is None:
+                return
+            params["thinking"] = {"type": "adaptive"}
+            params["output_config"] = {"effort": effort}
+            log.debug(
+                "Using adaptive thinking (effort=%s) for model %s",
+                effort,
+                self.model,
+            )
+            return
+        thinking = self._build_thinking_config(max_tokens)
+        if thinking:
+            params["thinking"] = thinking
 
     def _build_thinking_config(self, max_tokens: int) -> dict[str, Any] | None:
         """Map reasoning_effort onto Anthropic extended-thinking budget."""
