@@ -8,9 +8,11 @@ without standing up a real run.
 from __future__ import annotations
 
 import logging
+from pathlib import Path
 from typing import Any
 
 from .server import WebUIServer
+from .session_source import build_session_snapshot
 
 log = logging.getLogger(__name__)
 
@@ -47,4 +49,35 @@ def start_webui(
         if server.start():
             return server
     log.warning("WebUI could not bind any port in %d..%d", preferred, preferred + span - 1)
+    return None
+
+
+def start_session_webui(
+    session_dir: Path,
+    *,
+    run_name: str | None = None,
+    preferred: int = 8765,
+    scan: int = 16,
+) -> WebUIServer | None:
+    """Start a read-only WebUI backed by an on-disk session directory.
+
+    This is the keyless monitor: it has no live ``RunState`` or ``EventBus`` —
+    the server polls :func:`build_session_snapshot` on its heartbeat, so the
+    browser tracks whatever the host agent writes to *session_dir* via the
+    ``arbor mcp`` tools. Walks up to ``scan`` ports from ``preferred`` to find a
+    free one. Returns the running server (inspect ``.url``) or ``None`` if no
+    port is available.
+    """
+    session_dir = Path(session_dir)
+    label = run_name or session_dir.name
+
+    def _snapshot() -> dict[str, Any]:
+        return build_session_snapshot(session_dir, label)
+
+    for port in range(preferred, preferred + max(1, scan)):
+        # No run_state, no bus: snapshot_fn drives everything; read-only.
+        server = WebUIServer(None, None, port=port, enable_input=False, snapshot_fn=_snapshot)
+        if server.start():
+            return server
+    log.warning("session WebUI could not bind any port in %d..%d", preferred, preferred + scan - 1)
     return None

@@ -10,11 +10,16 @@ Provides the building blocks shared by both executor and coordinator:
 - create_provider: LLM provider factory
 """
 
-from .agent import Agent
-from .config import AgentConfig
-from .context import ContextManager
-from .experiment import ExperimentTracker, GitManager
-from .llm.base import LLMProvider, LLMResponse
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:  # resolved by type checkers only — no runtime import cost
+    from .agent import Agent
+    from .config import AgentConfig
+    from .context import ContextManager
+    from .experiment import ExperimentTracker, GitManager
+    from .llm.base import LLMProvider, LLMResponse
 
 __all__ = [
     "Agent",
@@ -27,6 +32,32 @@ __all__ = [
     "create_provider",
     "resolve_backend",
 ]
+
+# Map each lazily-exported symbol to the submodule that defines it. These pull in
+# the agent + LLM provider stack, so we import them only on first access (PEP
+# 562). This keeps lightweight, keyless consumers — e.g. the `arbor mcp` server,
+# `arbor export`, `arbor report` — from loading any LLM code just by touching the
+# `arbor.core` package. `from arbor.core import Agent` etc. still work unchanged.
+_LAZY_EXPORTS = {
+    "Agent": ".agent",
+    "AgentConfig": ".config",
+    "ContextManager": ".context",
+    "ExperimentTracker": ".experiment",
+    "GitManager": ".experiment",
+    "LLMProvider": ".llm.base",
+    "LLMResponse": ".llm.base",
+}
+
+
+def __getattr__(name: str) -> Any:
+    """Lazily import the heavy core exports on first attribute access (PEP 562)."""
+    module_suffix = _LAZY_EXPORTS.get(name)
+    if module_suffix is not None:
+        import importlib
+
+        module = importlib.import_module(module_suffix, __name__)
+        return getattr(module, name)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 def resolve_backend(provider: str | None, openai_api: str | None, model: str | None, base_url: str | None) -> str:

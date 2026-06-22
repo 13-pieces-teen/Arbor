@@ -50,6 +50,8 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install dev dependencies
-        run: uv sync --group dev
+        # Include the optional `mcp` extra so the `arbor mcp` server, the
+        # session-backed WebUI, and the plugin-manifest tests are exercised.
+        run: uv sync --group dev --extra mcp
       - name: Pytest
         run: uv run pytest

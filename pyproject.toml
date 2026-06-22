@@ -32,6 +32,12 @@ docs = [
     "mkdocs-material>=9.5",
     "mkdocs-static-i18n>=1.2",
 ]
+# `arbor mcp` (run Arbor's deterministic tools as an MCP server for a host
+# coding agent). Kept optional so the base install stays lean — install with
+# `pip install arbor-agent[mcp]`.
+mcp = [
+    "mcp>=1.2.0",
+]
 
 [project.scripts]
 arbor = "arbor.cli.app:main"
@@ -56,7 +62,7 @@ fallback_version = "0.1.0"
 # sub-packages explicitly (auto-discovery can't rename `src/` -> the import
 # name). Add new sub-packages here when you create them.
 [tool.setuptools]
-package-dir = { "arbor" = "src" }
+package-dir = { "arbor" = "src", "arbor.skills_suite" = "skills" }
 packages = [
     "arbor",
     "arbor.cli",
@@ -71,10 +77,15 @@ packages = [
     "arbor.events",
     "arbor.events.subscribers",
     "arbor.executor",
+    "arbor.mcp",
     "arbor.plugins",
     "arbor.report",
     "arbor.search_agent",
     "arbor.webui",
+    # The Agent Skill suite (top-level `skills/`) is shipped inside the wheel as
+    # `arbor.skills_suite` so `arbor install` can find and copy it after a plain
+    # `pip install`. `bundled_skills_root()` resolves to this directory.
+    "arbor.skills_suite",
 ]
 
 [tool.setuptools.package-data]
@@ -82,6 +93,9 @@ packages = [
 "arbor.cli" = ["assets/demo_session/*", "assets/*.html"]
 "arbor.webui" = ["index.html"]
 "arbor.plugins" = ["*.yaml", "*.yml"]
+# Ship every file in the skill suite verbatim (SKILL.md, agents/*.yaml,
+# references/*.md, scripts/*.py, …) so the installed copy is complete.
+"arbor.skills_suite" = ["**/*"]
 
 # ── Dev tooling ──────────────────────────────────────────────────────
 # Install with: `uv sync --group dev`  (or `pip install -e ".[dev]"` is NOT

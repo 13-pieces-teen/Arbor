@@ -19,9 +19,42 @@ In Claude Code, the equivalent direct invocation is usually:
 The internal phase skills are still required. Install all `arbor-*` skill
 directories together; do not install only `arbor-research-agent`.
 
-## Quick Download And Installation
+## Recommended: install with the `arbor` CLI
 
-Set `REPO_URL` to the Arbor GitHub repository and `REPO_REF` to the branch or
+If you have installed the Python package (`pip install arbor-agent`), the skill
+suite ships inside it — install it into your coding agent with one command, no
+manual copying:
+
+```bash
+arbor install            # auto-detects the harness
+arbor install --claude   # ~/.claude/skills
+arbor install --codex    # ${CODEX_HOME:-~/.codex}/skills
+arbor install --project  # <cwd>/.claude/skills
+arbor install --target <dir>
+arbor uninstall          # removes only the arbor-* skills
+```
+
+For the strongest, keyless experience, also register Arbor's real deterministic
+tools so the skills run on them instead of the stdlib fallback:
+
+```bash
+pip install "arbor-agent[mcp]"
+claude mcp add arbor -- arbor mcp
+```
+
+Or install everything (skills + MCP server) as a Claude Code plugin:
+
+```bash
+claude plugin marketplace add RUC-NLPIR/Arbor
+claude plugin install arbor
+```
+
+Restart your coding agent afterward, then invoke `/arbor-research-agent <task>`.
+
+## Manual Download And Installation
+
+If you have not installed the package, you can copy the suite by hand. Set
+`REPO_URL` to the Arbor GitHub repository and `REPO_REF` to the branch or
 tag that contains this `skills/` directory.
 
 ```bash

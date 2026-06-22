@@ -17,6 +17,7 @@ import logging
 import queue
 import secrets
 import threading
+from collections.abc import Callable
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
@@ -81,14 +82,20 @@ class WebUIServer:
 
     def __init__(self, run_state: Any, bus: Any, *, port: int,
                  host: str = "127.0.0.1", companion: Any | None = None,
-                 enable_input: bool = True) -> None:
+                 enable_input: bool = True,
+                 snapshot_fn: "Callable[[], dict[str, Any]] | None" = None) -> None:
         self.run_state = run_state
         self.bus = bus
         self.port = port
         self.host = host
         self.companion = companion
-        # Interactive iff the caller wants input AND we have the wiring for it.
-        self.interactive = bool(enable_input)
+        # ``snapshot_fn`` supports the keyless, file-backed mode: when set, the
+        # server polls it for state instead of subscribing to a live EventBus +
+        # RunState. ``bus`` may then be None. Always read-only in this mode.
+        self.snapshot_fn = snapshot_fn
+        # Interactive iff the caller wants input AND we have the wiring for it
+        # (never in file-backed mode — there is no run to steer).
+        self.interactive = bool(enable_input) and snapshot_fn is None
         self.token = secrets.token_urlsafe(16)
         self.broadcast = _Broadcast()
         self._httpd: ThreadingHTTPServer | None = None
@@ -116,7 +123,10 @@ class WebUIServer:
             return False
         self._httpd.daemon_threads = True
         self._httpd.webui = self  # type: ignore[attr-defined]
-        self.bus.on_all(self._on_event)
+        # File-backed mode has no bus to subscribe to; the heartbeat loop polls
+        # ``snapshot_fn`` instead.
+        if self.bus is not None:
+            self.bus.on_all(self._on_event)
         threading.Thread(target=self._httpd.serve_forever,
                          name="webui-http", daemon=True).start()
         threading.Thread(target=self._heartbeat_loop,
@@ -127,7 +137,8 @@ class WebUIServer:
         self._stop.set()
         if self._httpd is not None:
             try:
-                self.bus.off("*", self._on_event)   # stop receiving events
+                if self.bus is not None:
+                    self.bus.off("*", self._on_event)   # stop receiving events
             except Exception:  # pragma: no cover - best effort
                 pass
             try:
@@ -139,7 +150,12 @@ class WebUIServer:
     # ── frame builders ──
 
     def snapshot_frame(self) -> str:
-        state = state_to_dict(self.run_state)
+        # File-backed mode: poll the session directory; live mode: flatten the
+        # in-memory RunState.
+        if self.snapshot_fn is not None:
+            state = self.snapshot_fn()
+        else:
+            state = state_to_dict(self.run_state)
         state["interactive"] = self.interactive
         return json.dumps({"kind": "snapshot", "state": state})
 

@@ -105,17 +105,20 @@ https://github.com/user-attachments/assets/49c1a306-d2e9-49d6-9c83-65e38a62df30
 
 ## 🚀 CLI And Skill Versions
 
-This repository includes two ways to use Arbor:
+This repository includes three ways to use Arbor:
 
-| Version | Location | Best for | Recommendation |
+| Version | Location | Best for | Needs an API key? |
 | --- | --- | --- | --- |
-| Native CLI runtime | Python package and `arbor` command | Real Arbor research runs, long experiments, dashboard, checkpoints, executor tools, merge/test discipline, plugins, reports | Recommended. This path is more complete, more reliable, and gives the best Arbor behavior. |
-| Agent Skill Suite | [`skills/`](skills/README.md) | Codex or Claude Code environments where you want Arbor-style behavior without running the native Arbor runtime | Useful integration layer and fallback, but less complete than the CLI runtime. |
+| Native CLI runtime | Python package and `arbor` command | Real Arbor research runs, long experiments, dashboard, checkpoints, executor tools, merge/test discipline, plugins, reports | **Yes** — configure a provider/model in `arbor setup`. |
+| Keyless harness integration | `arbor install` + `arbor mcp` (or the Claude Code plugin) | Running Arbor **inside Claude Code / Codex using that harness's own model** — e.g. a Claude subscription plan, where there is no API key to give Arbor | **No** — the host agent's model does the reasoning; Arbor only supplies deterministic tools. |
+| Agent Skill Suite (standalone) | [`skills/`](skills/README.md) | The same harness flow without even installing the package — pure instructions + a stdlib fallback helper | **No** |
 
-If you can run the CLI, use the CLI. The native `arbor` runtime contains the full
-implementation: intake, Research Contract, live dashboard, EventBus,
+If you can run the CLI and have an API key, the native runtime gives the most
+complete Arbor behavior: intake, Research Contract, live dashboard, EventBus,
 checkpoint/resume, executor dispatch, protected dev/test evaluation discipline,
-SearchAgent, plugins, and final report generation.
+SearchAgent, plugins, and final report generation. If you only have a coding
+agent with a subscription model (no raw API key), use the **keyless harness
+integration** below — see [Use inside Claude Code or any harness](#-use-inside-claude-code-or-any-harness-no-api-key).
 
 The repo-root [`skills/`](skills/README.md) directory is a Codex/Claude Code
 skill suite. After installation, invoke `$arbor-research-agent` in Codex or
@@ -153,6 +156,55 @@ For the docs site, `pip install -e ".[docs]" && mkdocs serve`, or read them onli
 via the **Docs** badge above.
 
 </details>
+
+---
+
+## 🔑 Use Inside Claude Code or Any Harness (No API Key)
+
+On a Claude **subscription plan** there is no API key to hand to a separate tool.
+Arbor's keyless integration solves this: **Arbor never calls an LLM** — your
+coding agent's own model drives the research loop, while Arbor contributes its
+durable Idea Tree, evaluation, git-worktree isolation, guarded merges, and
+reports as deterministic tools.
+
+**1. Install the skill suite** (no more manual directory copying):
+
+```bash
+pip install arbor-agent
+arbor install            # auto-detects the harness; also --claude / --codex / --project / --target <dir>
+```
+
+**2. Register the keyless tool server** (optional but recommended — backs the
+skills with Arbor's *real* tree/eval/merge/report implementations):
+
+```bash
+pip install "arbor-agent[mcp]"          # the MCP server is an optional extra
+claude mcp add arbor -- arbor mcp        # Claude Code; any MCP-capable harness works
+```
+
+**Or do both in one step with the Claude Code plugin:**
+
+```bash
+claude plugin marketplace add RUC-NLPIR/Arbor
+claude plugin install arbor              # installs the skills + registers `arbor mcp`
+```
+
+**3. Run it** from inside your project, in the coding agent:
+
+```text
+/arbor-research-agent optimize this repo for <metric>. Ask before training, package installs, or B_test.
+```
+
+**4. Watch progress in the browser** (read-only, also keyless). Either ask the
+agent to call the `open_dashboard` tool, or run it yourself:
+
+```bash
+arbor web <run-name>                      # serves http://127.0.0.1:8765 for the session
+```
+
+To remove the skills later: `arbor uninstall` (it only touches Arbor's own
+`arbor-*` directories). See [`skills/README.md`](skills/README.md) for the full
+skill-suite reference and the manual install steps.
 
 ---
 
@@ -344,6 +396,9 @@ Day to day you only need `arbor`:
 | `arbor export <session> [output]` | Export a past session to self-contained HTML, or JSONL when `output` ends in `.jsonl`. |
 | `arbor doctor` | Diagnose install, PATH, git, and API keys. |
 | `arbor version` | Print the installed version. |
+| `arbor install` / `arbor uninstall` | Install/remove the Agent Skill suite into a coding agent (`--claude` / `--codex` / `--project` / `--target`). |
+| `arbor mcp` | Run Arbor's keyless deterministic tools as an MCP server (needs the `[mcp]` extra). |
+| `arbor web <session>` | Open a read-only browser monitor for a session (works without a live run). |
 
 Lower-level entry points (`run-research`, `coordinator`, `executor`, `review-research`)
 remain for debugging — see the [CLI reference](https://RUC-NLPIR.github.io/Arbor/docs/cli/).

@@ -68,14 +68,15 @@ https://github.com/user-attachments/assets/49c1a306-d2e9-49d6-9c83-65e38a62df30
 
 ## 🚀 CLI 与技能套件版本
 
-本仓库提供两种使用 Arbor 的方式：
+本仓库提供三种使用 Arbor 的方式：
 
-| 版本            | 位置                                                 | 适用场景                                                     | 建议                                                        |
+| 版本            | 位置                                                 | 适用场景                                                     | 是否需要 API 密钥？                                          |
 | --------------- | ---------------------------------------------------- | ------------------------------------------------------------ | ----------------------------------------------------------- |
-| 原生 CLI 运行时 | Python 包及 `arbor` 命令                             | 真实的 Arbor 研究运行、长时间实验、仪表盘、检查点、执行器工具、合并/测试纪律、插件、报告 | **推荐使用**。功能更完整、更可靠，能发挥 Arbor 的最佳性能。 |
-| 智能体技能套件  | [`skills/`](https://claude.ai/chat/skills/README.md) | 在 Codex 或 Claude Code 环境中获得 Arbor 风格的行为，无需运行原生 Arbor 运行时 | 实用的集成层和备用方案，但功能不如 CLI 运行时完整。         |
+| 原生 CLI 运行时 | Python 包及 `arbor` 命令                             | 真实的 Arbor 研究运行、长时间实验、仪表盘、检查点、执行器工具、合并/测试纪律、插件、报告 | **需要** —— 在 `arbor setup` 中配置 provider/model。 |
+| 无密钥 Harness 集成 | `arbor install` + `arbor mcp`（或 Claude Code 插件） | 在 **Claude Code / Codex 内部、直接使用该 harness 自带的模型** 运行 Arbor —— 例如 Claude 订阅套餐，没有可提供给 Arbor 的 API 密钥 | **不需要** —— 由宿主模型充当大脑，Arbor 只提供确定性工具。 |
+| 智能体技能套件（独立） | [`skills/`](skills/README.md) | 不安装 Python 包也能复现上面的 harness 流程 —— 纯指令 + 一个仅依赖标准库的兜底脚本 | **不需要** |
 
-如果你能运行 CLI，就使用 CLI。原生 `arbor` 运行时包含完整实现：任务摄入、研究合同、实时仪表盘、事件总线、检查点与恢复、执行器派发、受保护的开发/测试评估纪律、搜索智能体、插件和最终报告生成。
+如果你能运行 CLI 并且有 API 密钥，原生运行时提供最完整的 Arbor 行为：任务摄入、研究合同、实时仪表盘、事件总线、检查点与恢复、执行器派发、受保护的开发/测试评估纪律、搜索智能体、插件和最终报告生成。如果你只有一个使用订阅模型（没有原始 API 密钥）的编程智能体，请使用下面的 **无密钥 Harness 集成** —— 见[在 Claude Code 或任意 Harness 中使用](#-在-claude-code-或任意-harness-中使用无需-api-密钥)。
 
 仓库根目录下的 [`skills/`](https://claude.ai/chat/skills/README.md) 目录是一套 Codex/Claude Code 技能套件。安装完成后，在 Codex 中调用 `$arbor-research-agent`，或在 Claude Code 中调用 `/arbor-research-agent`，然后像描述 Arbor 任务一样描述你的研究目标即可。当目标、指标、数据、权限、预算或运行模式不明确时，技能套件会先进行 Arbor 风格的澄清确认，再加载协调器和各阶段技能。该目录与存放在 `src/skills/` 下的内部运行时技能是分开的。
 
@@ -106,6 +107,53 @@ arbor doctor
 若需本地查看文档站点，运行 `pip install -e ".[docs]" && mkdocs serve`，或通过上方的 **Docs** 徽章在线阅读。
 
 </details>
+
+------
+
+## 🔑 在 Claude Code 或任意 Harness 中使用（无需 API 密钥）
+
+在 Claude **订阅套餐** 下，你没有可以交给独立工具的 API 密钥。Arbor 的无密钥集成
+解决了这个问题：**Arbor 自身从不调用 LLM** —— 由你的编程智能体自带的模型驱动研究
+循环，而 Arbor 以确定性工具的形式提供持久化的 Idea Tree、评估、git worktree 隔离、
+受保护的合并以及报告。
+
+**1. 安装技能套件**（无需再手动复制目录）：
+
+```bash
+pip install arbor-agent
+arbor install            # 自动检测 harness；也可用 --claude / --codex / --project / --target <dir>
+```
+
+**2. 注册无密钥工具服务**（可选但推荐 —— 让技能运行在 Arbor 真实的
+树/评估/合并/报告实现之上）：
+
+```bash
+pip install "arbor-agent[mcp]"          # MCP 服务是可选附加项
+claude mcp add arbor -- arbor mcp        # Claude Code；任何支持 MCP 的 harness 均可
+```
+
+**或使用 Claude Code 插件一步到位：**
+
+```bash
+claude plugin marketplace add RUC-NLPIR/Arbor
+claude plugin install arbor              # 安装技能 + 注册 arbor mcp
+```
+
+**3. 在项目内、于编程智能体中运行：**
+
+```text
+/arbor-research-agent optimize this repo for <metric>. Ask before training, package installs, or B_test.
+```
+
+**4. 在浏览器中查看进度**（只读，同样无需密钥）。可让智能体调用 `open_dashboard`
+工具，或自己运行：
+
+```bash
+arbor web <run-name>                      # 在 http://127.0.0.1:8765 提供该 session 的视图
+```
+
+之后如需移除技能：`arbor uninstall`（只会处理 Arbor 自己的 `arbor-*` 目录）。
+完整的技能套件说明与手动安装步骤见 [`skills/README.md`](skills/README.md)。
 
 ------
 
@@ -276,6 +324,9 @@ ROOT（基线：20%）
 | `arbor export <session> [output]` | 将历史会话导出为自包含 HTML；当 `output` 以 `.jsonl` 结尾时导出 JSONL。 |
 | `arbor doctor`           | 诊断安装状态、PATH、git 及 API 密钥。                       |
 | `arbor version`          | 打印已安装的版本号。                                        |
+| `arbor install` / `arbor uninstall` | 将智能体技能套件安装到编程智能体 / 从中移除（`--claude` / `--codex` / `--project` / `--target`）。 |
+| `arbor mcp`              | 以 MCP 服务的形式运行 Arbor 的无密钥确定性工具（需要 `[mcp]` 附加项）。 |
+| `arbor web <session>`    | 为某次会话打开只读浏览器监控（无需正在进行的运行）。       |
 
 底层入口点（`run-research`、`coordinator`、`executor`、`review-research`）保留供调试使用——详见 [CLI 参考文档](https://ruc-nlpir.github.io/Arbor/docs/cli/)。
 
