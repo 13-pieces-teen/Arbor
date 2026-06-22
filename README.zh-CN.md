@@ -323,7 +323,7 @@ ROOT（基线：20%）
 | `arbor quickstart`       | 用免费密钥（Gemini/Groq）或本地模型（Ollama）快速跑起来。   |
 | `arbor setup`            | 配置模型提供商 / 模型 / API 密钥 → `~/.arbor/config.yaml`。 |
 | `arbor report <session>` | 重新渲染某次历史会话的 `REPORT.md`。                        |
-| `arbor idea-check "<想法>"` | 针对单个想法对照 alphaXiv 做新颖性 / 先行工作审查（需要 `[search]` 附加项）。 |
+| `arbor idea-check "<想法>"` | 针对单个想法对照 alphaXiv 做新颖性 / 先行工作审查（Python ≥ 3.12 默认内置）。 |
 | `arbor export <session> [output]` | 将历史会话导出为自包含 HTML；当 `output` 以 `.jsonl` 结尾时导出 JSONL。 |
 | `arbor doctor`           | 诊断安装状态、PATH、git 及 API 密钥。                       |
 | `arbor version`          | 打印已安装的版本号。                                        |
@@ -341,13 +341,9 @@ ROOT（基线：20%）
 
 ### 开启
 
-该后端位于一个可选附加项中（会引入 `alphaxiv-py`，需要 Python ≥ 3.12）：
-
-```bash
-pip install 'arbor-agent[search]'
-```
-
-它复用你已有的 Arbor LLM 凭证——无需额外配置。
+无需安装——在 **Python ≥ 3.12** 上该后端随 Arbor 默认内置（自带 `alphaxiv-py`），
+复用你已有的 Arbor LLM 凭证，`arbor idea-check` 开箱即用。（在 Python 3.10/3.11 上
+`alphaxiv-py` 不可用，后端会以清晰的提示优雅降级。）
 
 ### 三种用法
 
@@ -371,7 +367,7 @@ search:
 
 ### 关闭
 
-该功能**默认关闭**——不写 `search` 配置块、不安装 `[search]` 附加项时，Arbor 绝不会为文献检索访问网络。如需显式关闭，设 `search.enabled: false`（或保持 `builtin_backend: none`）。更想用自己的搜索服务？通过 `search.web_search_endpoint` 接入自建的 BrowseComp 风格后端的 BYO 路径依然可用。
+在运行中它**默认关闭**：`builtin_backend` 为 `none`，因此除非你设置 `search.builtin_backend: alphaxiv`（实验前审查还需 `auto_search_on_add: true`），Arbor 绝不会为文献检索访问网络。`arbor idea-check` 本身就是按需调用——只有你主动运行时才会产生开销。更想用自己的搜索服务？通过 `search.web_search_endpoint` 接入自建的 BrowseComp 风格后端的 BYO 路径依然可用。
 
 每个选项的细节请参阅[配置指南](https://ruc-nlpir.github.io/Arbor/docs/configuration/)与 [`arbor idea-check`](https://ruc-nlpir.github.io/Arbor/docs/cli/#arbor-idea-check)。
 

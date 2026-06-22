@@ -398,7 +398,7 @@ Day to day you only need `arbor`:
 | `arbor quickstart` | Get running fast with a free key (Gemini/Groq) or a local model (Ollama). |
 | `arbor setup` | Configure provider / model / keys → `~/.arbor/config.yaml`. |
 | `arbor report <session>` | Re-render `REPORT.md` for a past session. |
-| `arbor idea-check "<idea>"` | Novelty / prior-art check for one idea against alphaXiv (needs the `[search]` extra). |
+| `arbor idea-check "<idea>"` | Novelty / prior-art check for one idea against alphaXiv (built in on Python ≥ 3.12). |
 | `arbor export <session> [output]` | Export a past session to self-contained HTML, or JSONL when `output` ends in `.jsonl`. |
 | `arbor doctor` | Diagnose install, PATH, git, and API keys. |
 | `arbor version` | Print the installed version. |
@@ -422,14 +422,10 @@ summary of the space, the closest related papers, a `novel` / `partial-overlap` 
 
 ### Enable it
 
-The backend lives in an optional extra (it pulls in `alphaxiv-py`, which needs
-Python ≥ 3.12):
-
-```bash
-pip install 'arbor-agent[search]'
-```
-
-It reuses your existing Arbor LLM credentials — nothing else to configure.
+Nothing to install — the backend ships with Arbor by default on **Python ≥ 3.12**
+(it bundles `alphaxiv-py`). It reuses your existing Arbor LLM credentials, so
+`arbor idea-check` works out of the box. (On Python 3.10/3.11 `alphaxiv-py` is
+unavailable and the backend degrades with a clear message.)
 
 ### Use it three ways
 
@@ -460,10 +456,11 @@ prior-art context right before a merge decision — so wins arrive with citation
 
 ### Turn it off
 
-It is **off by default** — with no `search` block and no `[search]` extra installed,
-Arbor never touches the network for literature. To disable explicitly, set
-`search.enabled: false` (or leave `builtin_backend: none`). Prefer your own search
-service? The bring-your-own-endpoint path still works via
+In a run it is **off by default**: `builtin_backend` is `none`, so unless you set
+`search.builtin_backend: alphaxiv` (and, for pre-experiment checks,
+`auto_search_on_add: true`), Arbor never touches the network for literature.
+`arbor idea-check` is opt-in by nature — you only pay when you call it. Prefer your
+own search service? The bring-your-own-endpoint path still works via
 `search.web_search_endpoint` for a self-hosted BrowseComp-style backend.
 
 See the [configuration guide](https://RUC-NLPIR.github.io/Arbor/docs/configuration/)

@@ -199,8 +199,8 @@ search:
 
 !!! tip "内置文献检索"
     设 `search.builtin_backend: alphaxiv`，即可让 Arbor 通过 [alphaXiv](https://www.alphaxiv.org)
-    公共 API 调研相关工作——无需搜索端点或 API 密钥。先安装可选附加项：
-    `pip install 'arbor-agent[search]'`（需要 Python ≥ 3.12）。
+    公共 API 调研相关工作——无需搜索端点或 API 密钥。该后端（`alphaxiv-py`）在
+    **Python ≥ 3.12** 上随 Arbor 默认内置；在 3.10/3.11 上不可用。
 
     开启 `auto_search_on_add: true` 后，加入树的每个想法都会先做一次**实验前**新颖性审查，
     判定结果写入该节点的 `related_work` 字段（仅作建议，绝不阻断）。若想在运行之外单独审查一个

@@ -233,8 +233,8 @@ search:
 !!! tip "Built-in literature search"
     Set `search.builtin_backend: alphaxiv` to let Arbor survey related work over
     the public [alphaXiv](https://www.alphaxiv.org) API — no search endpoint or
-    API key needed. Install the optional extra first:
-    `pip install 'arbor-agent[search]'` (requires Python ≥ 3.12).
+    API key needed. The backend (`alphaxiv-py`) ships with Arbor by default on
+    **Python ≥ 3.12**; on 3.10/3.11 it is unavailable.
 
     With `auto_search_on_add: true`, every idea added to the tree gets a
     **pre-experiment** novelty check whose verdict lands in the node's

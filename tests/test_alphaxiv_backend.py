@@ -177,4 +177,5 @@ def test_missing_package_surfaces_actionable_message(monkeypatch):
     tool = AlphaXivSearchTool(cwd=".")
     out = asyncio.run(tool.execute(query=["x"]))
     assert "search-failed" in out
-    assert "arbor-agent[search]" in out
+    assert "alphaxiv-py" in out
+    assert "3.12" in out

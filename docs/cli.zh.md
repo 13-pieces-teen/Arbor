@@ -108,9 +108,7 @@ arbor run --resume --run-name my-study
 无需启动完整运行，即可对单个研究想法快速做新颖性 / 先行工作审查。它会派发一个 SearchAgent，调研 [alphaXiv](https://www.alphaxiv.org) 公共文献，并打印一份轻量判定：该领域已有工作的总结、最接近的相关论文、新颖性评估（`novel` / `partial-overlap` / `prior-art-exists`），以及具体的重叠风险。
 
 ```bash
-# 先安装一次可选搜索后端（需要 Python ≥ 3.12）：
-pip install 'arbor-agent[search]'
-
+# Python ≥ 3.12 默认内置，无需额外安装。
 arbor idea-check "用实体-关系草稿提升多跳问答"
 arbor idea-check "在代码生成中对方案做树搜索" --json
 ```

@@ -115,9 +115,7 @@ assessment (`novel` / `partial-overlap` / `prior-art-exists`), and overlap
 risks.
 
 ```bash
-# Install the optional search backend once (needs Python >= 3.12):
-pip install 'arbor-agent[search]'
-
+# Built in on Python >= 3.12 — no extra install needed.
 arbor idea-check "Use entity-relation scratchpads to improve multi-hop QA"
 arbor idea-check "tree search over plans for code generation" --json
 ```

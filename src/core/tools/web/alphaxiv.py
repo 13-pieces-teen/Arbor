@@ -13,8 +13,9 @@ Design: we subclass the HTTP tools so the pure-sync candidate pipeline
 it is overridden as a *native-async* path (no ``requests``, no
 ``asyncio.to_thread``), because the alphaXiv SDK is async.
 
-``alphaxiv-py`` requires Python >= 3.12, so it is an optional extra
-(``pip install 'arbor-agent[search]'``) imported lazily by :func:`_load_axv`.
+``alphaxiv-py`` requires Python >= 3.12, so it is declared as a
+marker-gated dependency: bundled with arbor on 3.12+ and absent on 3.10/3.11.
+It is imported lazily by :func:`_load_axv` so the module loads either way.
 """
 
 from __future__ import annotations
@@ -30,14 +31,16 @@ _ABS_URL = "https://www.alphaxiv.org/abs/{}"
 # Parse a paper id back out of an alphaXiv abs URL so web_visit can fetch it.
 _ABS_RE = re.compile(r"alphaxiv\.org/abs/([^/?#]+)", re.IGNORECASE)
 _MISSING_PKG_MSG = (
-    "The alphaXiv search backend requires the 'alphaxiv-py' package "
-    "(Python >= 3.12). Install it with:  pip install 'arbor-agent[search]'"
+    "The alphaXiv search backend needs the 'alphaxiv-py' package, which "
+    "requires Python >= 3.12. It ships with arbor by default on 3.12+; your "
+    "interpreter is older. Upgrade to Python >= 3.12, or install it manually "
+    "with:  pip install 'alphaxiv-py>=0.6.0'"
 )
 
 
 def _load_axv():
     """Lazily import the alphaXiv SDK. Raises an actionable RuntimeError if the
-    optional ``[search]`` extra is not installed."""
+    package is unavailable (i.e. running on Python < 3.12)."""
     try:
         from alphaxiv import AlphaXivClient  # type: ignore
         from alphaxiv.exceptions import AlphaXivError  # type: ignore

@@ -309,8 +309,8 @@ class SearchConfig(BaseModel):
     auto_search_focus: str | None = None
     # Built-in, zero-config search backend. ``"none"`` (default) uses the HTTP
     # endpoints above. ``"alphaxiv"`` queries the public alphaXiv API in-process
-    # (no endpoint URL, no API key) — requires the optional ``[search]`` extra
-    # (``pip install 'arbor-agent[search]'``, Python >= 3.12).
+    # (no endpoint URL, no API key). The ``alphaxiv-py`` package ships with arbor
+    # by default on Python >= 3.12; on 3.10/3.11 the backend is unavailable.
     builtin_backend: Literal["none", "alphaxiv"] = "none"
     # Tool-surface mode:
     #   "executor" (default) — register SearchIdeaContext / SearchIdeaContextParallel

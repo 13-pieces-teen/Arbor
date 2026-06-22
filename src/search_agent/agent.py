@@ -92,7 +92,7 @@ def build_search_agent(
             "build_search_agent requires a search backend: either set "
             "search.web_search_endpoint (WEB_SEARCH_ENDPOINT) for the HTTP "
             "backend, or set search.builtin_backend='alphaxiv' for the "
-            "zero-config alphaXiv backend (pip install 'arbor-agent[search]')."
+            "zero-config alphaXiv backend (bundled on Python >= 3.12)."
         )
 
     provider = _maybe_override_provider(

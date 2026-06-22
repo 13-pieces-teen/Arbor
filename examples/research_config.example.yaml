@@ -43,8 +43,8 @@ ui:
   # webui_port: 8765       # set to expose the read-only WebUI
 
 # Literature search / idea novelty checks (optional). Zero-config: queries the
-# public alphaXiv API in-process — no search endpoint, no key. Needs the search
-# extra:  pip install 'arbor-agent[search]'  (Python >= 3.12).
+# public alphaXiv API in-process — no search endpoint, no key. The backend
+# (alphaxiv-py) ships with arbor by default on Python >= 3.12.
 search:
   enabled: true
   builtin_backend: alphaxiv   # none (default) | alphaxiv

@@ -21,6 +21,12 @@ dependencies = [
     "prompt-toolkit>=3.0",
     "pydantic>=2.0",
     "pydantic-settings>=2.0",
+    # Zero-config alphaXiv literature-search backend (SearchAgent /
+    # `arbor idea-check`). Bundled by default so search works out of the box.
+    # `alphaxiv-py` requires Python >= 3.12, so it is gated by a marker: on
+    # Python 3.10/3.11 it is simply skipped and the backend degrades gracefully
+    # (a clear runtime message), keeping the base install on Python >= 3.10.
+    "alphaxiv-py>=0.6.0; python_version >= '3.12'",
 ]
 
 [project.urls]
@@ -38,13 +44,6 @@ docs = [
 # `pip install arbor-agent[mcp]`.
 mcp = [
     "mcp>=1.2.0",
-]
-# Zero-config alphaXiv search backend for the SearchAgent / `arbor idea-check`
-# (novelty & prior-art checks over the public alphaXiv API, no endpoint/key).
-# `alphaxiv-py` requires Python >= 3.12; kept optional so the base install
-# stays on Python >= 3.10 — install with `pip install arbor-agent[search]`.
-search = [
-    "alphaxiv-py>=0.6.0; python_version >= '3.12'",
 ]
 
 [project.scripts]
