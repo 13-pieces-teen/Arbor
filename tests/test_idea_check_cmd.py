@@ -45,7 +45,7 @@ def _patch_all(monkeypatch, agent_out: str = _CANNED):
     )
 
 
-def test_idea_check_renders_markdown(monkeypatch, capsys):
+def test_idea_check_renders_report_english(monkeypatch, capsys):
     _patch_all(monkeypatch)
     idea_check_command(
         hypothesis="Tree search over plans for code generation",
@@ -55,8 +55,24 @@ def test_idea_check_renders_markdown(monkeypatch, capsys):
         cwd=None,
     )
     out = capsys.readouterr().out
-    assert "Tree of Thoughts" in out
-    assert "partial-overlap" in out
+    assert "Tree of Thoughts" in out          # paper title preserved
+    assert "PARTIAL OVERLAP" in out           # localized novelty badge (en)
+    assert "Closest related work" in out      # english section label
+
+
+def test_idea_check_renders_report_chinese(monkeypatch, capsys):
+    # A Chinese idea => Chinese section labels + Chinese novelty badge.
+    _patch_all(monkeypatch)
+    idea_check_command(
+        hypothesis="用树搜索在代码生成中规划方案",
+        focus=None,
+        model=None,
+        as_json=False,
+        cwd=None,
+    )
+    out = capsys.readouterr().out
+    assert "想法新颖性审查" in out             # localized panel title
+    assert "部分重叠" in out                    # localized novelty badge (zh)
 
 
 def test_idea_check_json_mode(monkeypatch, capsys):
@@ -69,7 +85,7 @@ def test_idea_check_json_mode(monkeypatch, capsys):
         cwd=None,
     )
     out = capsys.readouterr().out
-    # Raw JSON should round-trip.
+    # Raw JSON should round-trip (no report rendering, no status noise on stdout).
     assert json.loads(out.strip())["novelty_assessment"] == "partial-overlap"
 
 

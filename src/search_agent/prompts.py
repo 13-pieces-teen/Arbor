@@ -104,8 +104,15 @@ def build_search_user_prompt(
     hypothesis: str,
     ancestor_insights: str = "",
     focus: str | None = None,
+    report_language: str | None = None,
 ) -> str:
-    """Build the user message that kicks off a SearchAgent run."""
+    """Build the user message that kicks off a SearchAgent run.
+
+    ``report_language`` (e.g. ``"the same language as the hypothesis above"``
+    or ``"Chinese"``): when set, the agent is asked to write the free-text
+    fields of its final JSON in that language. The ``novelty_assessment`` enum,
+    paper titles, and URLs are always left untouched.
+    """
     parts = [
         "## Hypothesis to investigate",
         hypothesis.strip(),
@@ -127,4 +134,13 @@ def build_search_user_prompt(
         "final JSON object. No code, no implementation suggestions — just "
         "related-work survey + novelty assessment.",
     ])
+    if report_language and report_language.strip():
+        parts.extend([
+            "## Report language",
+            "Write the free-text fields of your final JSON — `summary`, each "
+            "`related_papers[].one_line_relevance`, and `overlap_risks` — in "
+            f"{report_language.strip()}. Keep `novelty_assessment` as the exact "
+            "English enum value (`novel` / `partial-overlap` / "
+            "`prior-art-exists`), and keep paper titles and URLs unchanged.",
+        ])
     return "\n\n".join(parts)
