@@ -26,6 +26,17 @@ def replay_command(
     demo: bool = typer.Option(
         False, "--demo", help="Replay the bundled sample recording (no API key needed)."
     ),
+    html: bool = typer.Option(
+        False, "--html",
+        help="Write a shareable, self-contained interactive tree-replay page instead "
+             "of playing in the terminal.",
+    ),
+    out: Optional[Path] = typer.Option(
+        None, "--out", "-o", help="Output path for --html (default: <session>/arbor-tree.html).",
+    ),
+    open_browser: bool = typer.Option(
+        True, "--open/--no-open", help="Open the generated HTML in your browser.",
+    ),
     speed: float = typer.Option(
         None, "--speed", "-s", help="Timeline compression (higher = faster). Default 12×.",
     ),
@@ -74,6 +85,10 @@ def replay_command(
         raise typer.Exit(code=1) from exc
 
     print_recording_banner(rec, is_demo=demo)
+    if html:
+        _write_html(rec, out, open_browser=open_browser)
+        return
+
     exit_reason = replay_recording(
         rec,
         speed=DEFAULT_SPEED if speed is None else speed,
@@ -81,6 +96,24 @@ def replay_command(
     )
     if exit_reason == "interrupted":
         raise typer.Exit(code=130)
+
+
+def _write_html(rec, out: Optional[Path], *, open_browser: bool) -> None:
+    """Render the shareable tree-replay page and (optionally) open it."""
+    from ..tree_export import default_html_path, write_tree_html
+
+    target = out if out is not None else default_html_path(rec)
+    try:
+        path = write_tree_html(rec, target)
+    except OSError as exc:
+        typer.secho(f"error: failed to write HTML: {exc}", fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1) from exc
+    typer.secho(f"Wrote interactive tree replay to: {path}", fg=typer.colors.GREEN)
+    if open_browser:
+        import webbrowser
+        if not webbrowser.open(path.resolve().as_uri()):
+            typer.secho("(could not open a browser — open the file above manually)",
+                        fg=typer.colors.YELLOW)
 
 
 def _resolve_source(source: Path, cwd: Path) -> Path:

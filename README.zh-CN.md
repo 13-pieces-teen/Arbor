@@ -117,6 +117,9 @@ arbor doctor
 arbor replay --demo   # 回放一次录制好的运行：假设树在眼前生长
 ```
 
+> 想要可分享的版本？`arbor replay --demo --html` 会生成一个自包含的交互式页面
+> （无需服务器、无外部依赖），可在浏览器打开或附到任意地方。
+
 **然后在你自己的任务上运行：**
 
 ```bash
@@ -265,8 +268,8 @@ ROOT（基线：20%）
 | 命令                     | 功能                                                        |
 | ------------------------ | ----------------------------------------------------------- |
 | `arbor`                  | 启动交互式研究会话。                                        |
-| `arbor replay --demo`    | 在实时仪表盘里回放一次内置示例运行 —— 无需 API 密钥。       |
-| `arbor replay <session>` | 按时间轴回放任意历史运行的 `events.jsonl`。                 |
+| `arbor replay --demo`    | 在实时仪表盘里回放一次内置示例运行 —— 无需 API 密钥；加 `--html` 生成可分享的网页。 |
+| `arbor replay <session>` | 按时间轴回放任意历史运行的 `events.jsonl`（`--html` 可导出交互式页面）。 |
 | `arbor quickstart`       | 用免费密钥（Gemini/Groq）或本地模型（Ollama）快速跑起来。   |
 | `arbor setup`            | 配置模型提供商 / 模型 / API 密钥 → `~/.arbor/config.yaml`。 |
 | `arbor report <session>` | 重新渲染某次历史会话的 `REPORT.md`。                        |

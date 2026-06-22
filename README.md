@@ -164,6 +164,9 @@ via the **Docs** badge above.
 arbor replay --demo   # watch a recorded run: the hypothesis tree grows live
 ```
 
+> Want a shareable version? `arbor replay --demo --html` writes a self-contained
+> interactive page (no server, no deps) you can open in a browser or attach anywhere.
+
 **Then run it on your own task:**
 
 ```bash
@@ -333,8 +336,8 @@ Day to day you only need `arbor`:
 | Command | What it does |
 | --- | --- |
 | `arbor` | Start an interactive research session. |
-| `arbor replay --demo` | Replay a bundled sample run in the live dashboard — no API key needed. |
-| `arbor replay <session>` | Replay any past run's `events.jsonl` from its timeline. |
+| `arbor replay --demo` | Replay a bundled sample run in the live dashboard — no API key needed. Add `--html` for a shareable browser page. |
+| `arbor replay <session>` | Replay any past run's `events.jsonl` from its timeline (`--html` to export an interactive page). |
 | `arbor quickstart` | Get running fast with a free key (Gemini/Groq) or a local model (Ollama). |
 | `arbor setup` | Configure provider / model / keys → `~/.arbor/config.yaml`. |
 | `arbor report <session>` | Re-render `REPORT.md` for a past session. |
