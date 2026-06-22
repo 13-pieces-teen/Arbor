@@ -243,12 +243,15 @@ search:
     | `jina` | no (optional `JINA_API_KEY` raises limits) | general web (s.jina.ai) |
     | `serper` | `SERPER_API_KEY` | Google results (serper.dev) |
     | `exa` | `EXA_API_KEY` | neural web search (exa.ai) |
+    | `exa-mcp` | `EXA_API_KEY` | Exa via its hosted MCP server (needs `arbor-agent[mcp]`) |
     | `endpoint` | optional | self-hosted `web_search_endpoint` (BrowseComp-style) |
 
     A backend whose key is missing is silently skipped. The fully **keyless**
     default is `backends: [alphaxiv, jina]` — papers + general web, no setup.
     Keys can be set in the config file (`serper_api_key` / `exa_api_key` /
-    `jina_api_key`) or via the matching env vars.
+    `jina_api_key`) or via the matching env vars. The `exa-mcp` backend talks to
+    Exa's hosted MCP server (`https://mcp.exa.ai/mcp`, override with
+    `exa_mcp_url`); install the MCP client with `pip install 'arbor-agent[mcp]'`.
 
     **Visiting pages (`search.visit_backend`).** `auto` (default) reads alphaXiv
     papers via the SDK (full text) and any other URL via the keyless **Jina

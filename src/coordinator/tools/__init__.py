@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING
 
 from ...core.tools.base import Tool
@@ -24,6 +25,8 @@ if TYPE_CHECKING:
     from ..config import CoordinatorConfig
     from ..idea_tree import IdeaTree
     from ...core.llm.base import LLMProvider
+
+log = logging.getLogger(__name__)
 
 
 def get_coordinator_tools(
@@ -95,6 +98,13 @@ def get_coordinator_tools(
     # ── Web search / browse — only registered if enabled and configured ──
     sc = getattr(config, "search", None)
     if sc is not None and sc.enabled and sc.has_backend:
+        from ...core.tools.web.backends import resolve_backend_names
+        log.info(
+            "search enabled — backends: %s | visit: %s | grounded_ideation: %s",
+            ", ".join(resolve_backend_names(sc)) or "(none)",
+            (sc.visit_backend or "auto"),
+            "on" if sc.grounded_ideation else "off",
+        )
         mode = (sc.mode or "executor").lower()
         if mode == "inline":
             # Phase-1 surface: coordinator calls the web tools itself. Backend

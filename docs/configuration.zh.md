@@ -208,11 +208,14 @@ search:
     | `jina` | 否（可选 `JINA_API_KEY` 提配额） | 通用网页（s.jina.ai） |
     | `serper` | `SERPER_API_KEY` | Google 结果（serper.dev） |
     | `exa` | `EXA_API_KEY` | 神经网络检索（exa.ai） |
+    | `exa-mcp` | `EXA_API_KEY` | 经 Exa 托管 MCP 服务器接入（需 `arbor-agent[mcp]`） |
     | `endpoint` | 可选 | 自托管 `web_search_endpoint`（BrowseComp 风格） |
 
     缺少 key 的后端会被静默跳过。完全**免 key** 的默认组合是
     `backends: [alphaxiv, jina]`——论文 + 通用网页，零配置。key 可写在配置文件里
     （`serper_api_key` / `exa_api_key` / `jina_api_key`），或用对应的同名环境变量。
+    `exa-mcp` 后端连接 Exa 托管的 MCP 服务器（`https://mcp.exa.ai/mcp`，可用 `exa_mcp_url`
+    覆盖）；用 `pip install 'arbor-agent[mcp]'` 安装 MCP 客户端。
 
     **读取页面（`search.visit_backend`）。** `auto`（默认）会用 SDK 读 alphaXiv 论文（全文），
     其它 URL 用免 key 的 **Jina reader**（`r.jina.ai`），再 fallback 到原始 `requests` 抓取——

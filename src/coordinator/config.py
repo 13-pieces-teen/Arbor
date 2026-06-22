@@ -346,8 +346,11 @@ class SearchConfig(BaseModel):
     #   append "endpoint". Backends missing credentials are dropped.
     backends: list[str] = PydField(default_factory=list)
     serper_api_key: str | None = None  # SERPER_API_KEY
-    exa_api_key: str | None = None     # EXA_API_KEY
+    exa_api_key: str | None = None     # EXA_API_KEY (used by both "exa" REST and "exa-mcp")
     jina_api_key: str | None = None    # JINA_API_KEY (optional; raises Jina rate limits)
+    # Override the Exa MCP server URL for the "exa-mcp" backend (default
+    # https://mcp.exa.ai/mcp). Auth uses exa_api_key via the x-api-key header.
+    exa_mcp_url: str | None = None
     # Visit/click backend: "auto" picks per config (browse endpoint → that;
     # alphaXiv-only → alphaXiv SDK; else keyless Jina). Force one with
     # "jina" | "requests" | "alphaxiv" | "endpoint".

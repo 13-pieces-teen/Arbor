@@ -7,10 +7,12 @@ faked via ``ax._load_axv``.
 from __future__ import annotations
 
 import asyncio
+import json
 
 import arbor.core.tools.web.backends as B
 from arbor.core.tools.web.backends import (
     ExaBackend,
+    ExaMcpBackend,
     JinaSearchBackend,
     SerperBackend,
     build_search_backends,
@@ -193,3 +195,54 @@ def test_factory_no_backend_returns_none():
     sc = SearchConfig()
     assert build_web_search_tool(sc, cwd=".") is None
     assert build_web_visit_tool(sc, cwd=".") is None
+
+
+# ── Exa MCP backend ──────────────────────────────────────────────────────────
+
+def test_exa_mcp_resolve_and_build():
+    sc = SearchConfig(backends=["exa-mcp"], exa_api_key="k")
+    assert resolve_backend_names(sc) == ["exa-mcp"]
+    backends = build_search_backends(sc)
+    assert len(backends) == 1 and backends[0].name == "exa-mcp"
+
+
+def test_exa_mcp_dropped_without_key(monkeypatch):
+    monkeypatch.delenv("EXA_API_KEY", raising=False)
+    sc = SearchConfig(backends=["exa-mcp"])
+    assert resolve_backend_names(sc) == []
+
+
+def test_exa_mcp_uses_configured_url():
+    sc = SearchConfig(backends=["exa-mcp"], exa_api_key="k", exa_mcp_url="https://my/mcp")
+    backend = build_search_backends(sc)[0]
+    assert backend._url == "https://my/mcp"
+
+
+def test_exa_mcp_parse_results():
+    payload = json.dumps({"results": [
+        {"url": "https://e.com", "title": "E", "text": "body", "author": "Ann", "publishedDate": "2025"},
+        {"url": "https://f.com", "title": "F", "highlights": ["h1", "h2"]},
+    ]})
+    items = ExaMcpBackend._parse(payload)
+    assert items[0]["url"] == "https://e.com"
+    assert "body" in items[0]["snippets"] and "Ann" in items[0]["snippets"]
+    assert items[1]["url"] == "https://f.com"
+    assert "h1" in items[1]["snippets"]
+
+
+def test_exa_mcp_parse_handles_garbage():
+    assert ExaMcpBackend._parse("not json") == []
+    assert ExaMcpBackend._parse("") == []
+
+
+def test_exa_mcp_search_parses_tool_output(monkeypatch):
+    """search() maps the MCP tool's text output without touching the network."""
+    canned = json.dumps({"results": [{"url": "https://e.com", "title": "E", "text": "b"}]})
+
+    async def fake_call(self, query, max_results):
+        return canned
+
+    monkeypatch.setattr(ExaMcpBackend, "_call_tool", fake_call)
+    items = asyncio.run(ExaMcpBackend(api_key="k").search("q", 5))
+    assert items == [{"url": "https://e.com", "title": "E", "snippets": "b"}]
+

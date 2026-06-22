@@ -28,7 +28,7 @@ from urllib.parse import quote
 import requests
 
 _HTTP_TIMEOUT = (5, 30)
-_KNOWN = ("alphaxiv", "jina", "serper", "exa", "endpoint")
+_KNOWN = ("alphaxiv", "jina", "serper", "exa", "exa-mcp", "endpoint")
 
 
 class SearchBackend(ABC):
@@ -205,6 +205,92 @@ class AlphaXivBackend(SearchBackend):
         return ax.papers_to_items(papers)
 
 
+class ExaMcpBackend(SearchBackend):
+    """Exa search via its hosted **MCP** server (``https://mcp.exa.ai/mcp``).
+
+    Uses the MCP streamable-HTTP client (the same ``mcp`` package the Arbor MCP
+    server depends on) to call Exa's ``web_search_exa`` tool. Needs an Exa API
+    key (sent as the ``x-api-key`` header) and the optional ``mcp`` dependency
+    (``pip install 'arbor-agent[mcp]'``).
+    """
+
+    name = "exa-mcp"
+    DEFAULT_URL = "https://mcp.exa.ai/mcp"
+
+    def __init__(self, *, api_key: str, url: str | None = None,
+                 tool: str = "web_search_exa", read_timeout: int = 30):
+        self._api_key = api_key
+        self._url = url or self.DEFAULT_URL
+        self._tool = tool
+        self._read_timeout = read_timeout
+
+    async def search(self, query: str, max_results: int) -> list[dict]:
+        return self._parse(await self._call_tool(query, max_results))
+
+    async def _call_tool(self, query: str, max_results: int) -> str:
+        try:
+            from datetime import timedelta
+
+            from mcp import ClientSession
+            from mcp.client.streamable_http import streamablehttp_client
+        except ImportError as exc:  # pragma: no cover - exercised via env
+            raise RuntimeError(
+                "the exa-mcp backend needs the 'mcp' package — install it with "
+                "pip install 'arbor-agent[mcp]'"
+            ) from exc
+
+        headers = {"x-api-key": self._api_key}
+        async with streamablehttp_client(self._url, headers=headers) as (read, write, _):
+            async with ClientSession(read, write) as session:
+                await session.initialize()
+                result = await session.call_tool(
+                    self._tool,
+                    {"query": query, "numResults": max_results},
+                    read_timeout_seconds=timedelta(seconds=self._read_timeout),
+                )
+        parts = [
+            getattr(c, "text", "")
+            for c in (getattr(result, "content", None) or [])
+            if getattr(c, "text", "")
+        ]
+        return "\n".join(parts)
+
+    @staticmethod
+    def _parse(text: str) -> list[dict]:
+        """Defensively map Exa MCP's (text/JSON) result into search items."""
+        import json
+
+        text = (text or "").strip()
+        if not text:
+            return []
+        try:
+            data = json.loads(text)
+        except json.JSONDecodeError:
+            return []
+        if isinstance(data, dict):
+            rows = data.get("results") or data.get("data") or data.get("hits") or []
+        elif isinstance(data, list):
+            rows = data
+        else:
+            rows = []
+        items: list[dict] = []
+        for r in rows:
+            if not isinstance(r, dict):
+                continue
+            body = r.get("text") or r.get("snippet") or r.get("summary") or ""
+            if not body and isinstance(r.get("highlights"), list):
+                body = " … ".join(str(h) for h in r["highlights"])
+            prefix = " · ".join(
+                p for p in (r.get("author") or "", r.get("publishedDate") or "") if p
+            )
+            items.append({
+                "url": r.get("url") or r.get("id") or "",
+                "title": r.get("title") or "No Title",
+                "snippets": _snippet(prefix, body),
+            })
+        return items
+
+
 # ── Resolution from a (duck-typed) SearchConfig ────────────────────────────
 
 def _exa_key(sc: Any) -> str | None:
@@ -239,6 +325,8 @@ def resolve_backend_names(sc: Any) -> list[str]:
             continue
         if n == "exa" and not _exa_key(sc):
             continue
+        if n == "exa-mcp" and not _exa_key(sc):
+            continue
         usable.append(n)
     return list(dict.fromkeys(usable))
 
@@ -255,6 +343,10 @@ def build_search_backends(sc: Any) -> list[SearchBackend]:
             out.append(SerperBackend(api_key=_serper_key(sc)))
         elif n == "exa":
             out.append(ExaBackend(api_key=_exa_key(sc)))
+        elif n == "exa-mcp":
+            out.append(ExaMcpBackend(
+                api_key=_exa_key(sc), url=getattr(sc, "exa_mcp_url", None)
+            ))
         elif n == "endpoint":
             out.append(EndpointBackend(
                 endpoint_url=sc.web_search_endpoint,
