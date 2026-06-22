@@ -198,42 +198,20 @@ search:
   auto_search_on_add: false      # 每个新想法在运行前先做新颖性审查
 ```
 
-!!! tip "检索后端（`search.backends`）"
-    检索 agent 用两类工具：**search**（找候选 URL）与 **visit**（读页面）。
-    `search.backends` 是一个有序后端列表，所有后端的结果会合并去重，因此可以同时接多个来源：
+#### 外部知识与检索 {#search}
 
-    | 后端 | 需要 key? | 覆盖 |
-    | --- | --- | --- |
-    | `alphaxiv` | 否 | arXiv / alphaXiv 论文（Python ≥ 3.12） |
-    | `jina` | 否（可选 `JINA_API_KEY` 提配额） | 通用网页（s.jina.ai） |
-    | `serper` | `SERPER_API_KEY` | Google 结果（serper.dev） |
-    | `exa` | `EXA_API_KEY` | 神经网络检索（exa.ai） |
-    | `exa-mcp` | `EXA_API_KEY` | 经 Exa 托管 MCP 服务器接入（需 `arbor-agent[mcp]`） |
-    | `endpoint` | 可选 | 自托管 `web_search_endpoint`（BrowseComp 风格） |
+!!! tip "检索后端与接地 ideation"
+    Arbor 能在两条互相独立、默认关闭的 lane 中使用文献与开放网络——**接地 ideation**
+    （ideation *期间*检索 → `node.grounding`）与**新颖性审查**（实验*之后*核查先行工作 →
+    `node.related_work`）。`search.backends` 是一个有序、合并的来源列表；免 key 默认是
+    `[alphaxiv, jina]`（论文 + 通用网页，零配置），`serper` / `exa` / `exa-mcp` 在各自的
+    API key 后可用。读取页面同样免 key（`visit_backend: auto`，经 Jina reader）。完整后端表格、
+    intent、key 与示例见 **[检索与外部知识](search.zh.md)** 指南。
 
-    缺少 key 的后端会被静默跳过。完全**免 key** 的默认组合是
-    `backends: [alphaxiv, jina]`——论文 + 通用网页，零配置。key 可写在配置文件里
-    （`serper_api_key` / `exa_api_key` / `jina_api_key`），或用对应的同名环境变量。
-    `exa-mcp` 后端连接 Exa 托管的 MCP 服务器（`https://mcp.exa.ai/mcp`，可用 `exa_mcp_url`
-    覆盖）；用 `pip install 'arbor-agent[mcp]'` 安装 MCP 客户端。
+    关键字段：`backends`、`grounded_ideation`、`auto_search_on_add`、`visit_backend`、
+    `serper_api_key` / `exa_api_key` / `jina_api_key`、`exa_mcp_url`。旧的
+    `builtin_backend` / `web_search_endpoint` 仍可用。
 
-    **读取页面（`search.visit_backend`）。** `auto`（默认）会用 SDK 读 alphaXiv 论文（全文），
-    其它 URL 用免 key 的 **Jina reader**（`r.jina.ai`），再 fallback 到原始 `requests` 抓取——
-    因此打开页面无需 browse 端点或 key。也可强制单一取页器：`jina` | `requests` | `alphaxiv` | `endpoint`。
-
-    **向后兼容。** 旧的 `builtin_backend: alphaxiv` 与
-    `web_search_endpoint` / `web_browse_endpoint` 仍原样可用（`backends` 为空时会自动映射）。
-
-!!! tip "接地 ideation 与 新颖性审查（两条独立 lane）"
-    开启 `grounded_ideation: true` 后，coordinator 在 ideation 阶段获得一个 **`ResearchSearch`**
-    工具，可用来：给草稿 idea 找相关工作、整理某领域的解法、查具体事实、或扫描方向找空白点。
-    它**默认关闭**，以保证基准运行的公平（系统无法从网上抄成品工作）。塑造了某个 idea 的来源
-    会记录在该节点的 `grounding` 字段。
-
-    这与**实验后的新颖性审查**是分开的：开启 `auto_search_on_add: true`（或用
-    [`arbor idea-check`](cli.zh.md#arbor-idea-check)）后，一个专门的 SearchAgent 会在 idea
-    验证有效**之后**调研先验工作，并写入该节点的 `related_work` 字段。两条 lane 各自独立检索，
-    永不共享抓取的文本。
 
 
 !!! note "扁平键也可以"

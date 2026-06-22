@@ -49,6 +49,7 @@ nav:
       - How It Works: how-it-works.md
   - Guides:
       - Configuration: configuration.md
+      - Search & External Knowledge: search.md
       - Interaction Modes: interaction-modes.md
       - Web UI & Monitoring: web-ui.md
       - Plugins: plugins.md
@@ -107,6 +108,7 @@ plugins:
             How It Works: 工作原理
             Guides: 指南
             Configuration: 配置
+            Search & External Knowledge: 检索与外部知识
             Interaction Modes: 交互模式
             Web UI & Monitoring: Web UI 与监控
             Plugins: 插件

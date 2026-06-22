@@ -231,51 +231,23 @@ search:
   auto_search_on_add: false      # novelty-check every new idea before running it
 ```
 
-!!! tip "Search backends (`search.backends`)"
-    The search agent uses two kinds of tool: **search** (find candidate URLs)
-    and **visit** (read a page). `search.backends` is an ordered list of search
-    backends; results from all of them are merged and de-duplicated, so you can
-    combine sources:
+#### External knowledge & search {#search}
 
-    | backend | needs a key? | covers |
-    | --- | --- | --- |
-    | `alphaxiv` | no | arXiv / alphaXiv papers (Python ≥ 3.12) |
-    | `jina` | no (optional `JINA_API_KEY` raises limits) | general web (s.jina.ai) |
-    | `serper` | `SERPER_API_KEY` | Google results (serper.dev) |
-    | `exa` | `EXA_API_KEY` | neural web search (exa.ai) |
-    | `exa-mcp` | `EXA_API_KEY` | Exa via its hosted MCP server (needs `arbor-agent[mcp]`) |
-    | `endpoint` | optional | self-hosted `web_search_endpoint` (BrowseComp-style) |
+!!! tip "Search backends and grounded ideation"
+    Arbor can use literature and the open web in two independent, default-off
+    lanes — **grounded ideation** (search *during* ideation → `node.grounding`)
+    and the **novelty audit** (prior-art check *after* an experiment →
+    `node.related_work`). `search.backends` is an ordered, merged list of
+    sources; the keyless default is `[alphaxiv, jina]` (papers + general web,
+    no setup), with `serper` / `exa` / `exa-mcp` available behind their API
+    keys. Page reading is keyless too (`visit_backend: auto`, via the Jina
+    reader). See the **[Search & External Knowledge](search.md)** guide for the
+    full backend table, intents, keys, and examples.
 
-    A backend whose key is missing is silently skipped. The fully **keyless**
-    default is `backends: [alphaxiv, jina]` — papers + general web, no setup.
-    Keys can be set in the config file (`serper_api_key` / `exa_api_key` /
-    `jina_api_key`) or via the matching env vars. The `exa-mcp` backend talks to
-    Exa's hosted MCP server (`https://mcp.exa.ai/mcp`, override with
-    `exa_mcp_url`); install the MCP client with `pip install 'arbor-agent[mcp]'`.
+    Key fields: `backends`, `grounded_ideation`, `auto_search_on_add`,
+    `visit_backend`, `serper_api_key` / `exa_api_key` / `jina_api_key`,
+    `exa_mcp_url`. Legacy `builtin_backend` / `web_search_endpoint` still work.
 
-    **Visiting pages (`search.visit_backend`).** `auto` (default) reads alphaXiv
-    papers via the SDK (full text) and any other URL via the keyless **Jina
-    reader** (`r.jina.ai`), falling back to a raw `requests` fetch — so no browse
-    endpoint or key is needed to open a page. Force a single fetcher with
-    `jina` | `requests` | `alphaxiv` | `endpoint`.
-
-    **Backward compatible.** The old `builtin_backend: alphaxiv` and
-    `web_search_endpoint` / `web_browse_endpoint` settings still work unchanged
-    (they map onto `backends` automatically when `backends` is empty).
-
-!!! tip "Grounded ideation vs. novelty audit (two separate lanes)"
-    With `grounded_ideation: true` the coordinator gets a **`ResearchSearch`**
-    tool it can call *during* ideation — to find related work for a draft idea,
-    survey how a field is solved, look up a fact, or scan a direction for gaps.
-    It is **off by default** so benchmark runs stay fair (the system can't crib
-    finished work off the web). The source(s) that shaped an idea are recorded
-    on the node's `grounding` field.
-
-    This is separate from the **post-experiment novelty audit**: with
-    `auto_search_on_add: true` (or via [`arbor idea-check`](cli.md#arbor-idea-check))
-    a dedicated SearchAgent surveys prior art *after* an idea proves out and
-    writes the node's `related_work` field. The two lanes run independent
-    searches and never share fetched text.
 
 
 !!! note "Flat keys also work"
