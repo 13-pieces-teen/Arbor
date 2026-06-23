@@ -519,9 +519,9 @@ class CoordinatorOrchestrator:
 
         plugin = self.config.plugin
         eval_contract = dict(getattr(plugin, "eval_contract", {}) or {})
-        # allow a tree-meta override/addition
-        if self.tree.meta.get("contamination"):
-            eval_contract.setdefault("contamination", self.tree.meta["contamination"])
+        # The contract comes from the plugin only. meta["contamination"] holds
+        # *our own* report from a prior run; feeding it back as an input would
+        # re-assess a report-shaped dict and downgrade the result to "unknown".
         if not eval_contract.get("contamination"):
             return  # nothing declared — skip silently
         try:

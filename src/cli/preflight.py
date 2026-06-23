@@ -37,6 +37,7 @@ class PreflightChecker:
       2. cwd exists and contains files
       3. git installed and repo not dirty (warn if no repo at all)
       4. an eval entry point exists (eval.sh / evaluate.py / similar)
+      5. contamination signals declared in the eval contract (zero-network warn)
     """
 
     EVAL_CANDIDATES = ("eval.sh", "evaluate.sh", "run_eval.sh",

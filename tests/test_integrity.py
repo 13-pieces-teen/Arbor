@@ -1,6 +1,10 @@
 from __future__ import annotations
 
+import os
+import stat
 from pathlib import Path
+
+import pytest
 
 from arbor.coordinator.tools.integrity import (
     apply_readonly,
@@ -67,3 +71,23 @@ def test_readonly_roundtrip_never_raises_and_restores(tmp_path: Path):
 def test_apply_readonly_on_missing_path_is_noop(tmp_path: Path):
     apply_readonly(tmp_path, ["does/not/exist/**"])  # must not raise
     clear_readonly(tmp_path, ["does/not/exist/**"])
+
+
+@pytest.mark.skipif(os.name == "nt", reason="POSIX executable bit not meaningful on Windows")
+def test_readonly_preserves_executable_bit(tmp_path: Path):
+    # A protected executable (e.g. evaluation/grade.sh) must keep its +x bit so
+    # git does not see a spurious mode change that would block the merge.
+    (tmp_path / "evaluation").mkdir()
+    script = tmp_path / "evaluation" / "grade.sh"
+    script.write_text("#!/bin/sh\necho score: 1.0\n", encoding="utf-8")
+    script.chmod(0o755)
+
+    apply_readonly(tmp_path, ["evaluation/**"])
+    mode = stat.S_IMODE(script.stat().st_mode)
+    assert mode & stat.S_IXUSR  # exec bit preserved
+    assert not (mode & stat.S_IWUSR)  # write removed
+
+    clear_readonly(tmp_path, ["evaluation/**"])
+    mode = stat.S_IMODE(script.stat().st_mode)
+    assert mode & stat.S_IXUSR  # still executable
+    assert mode & stat.S_IWUSR  # writable again

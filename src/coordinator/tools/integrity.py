@@ -81,9 +81,27 @@ def verify_protected_manifest(
     return sorted(changes, key=lambda c: c.path)
 
 
-def _chmod(path: Path, mode: int) -> None:
+_WRITE_BITS = stat.S_IWUSR | stat.S_IWGRP | stat.S_IWOTH
+
+
+def _set_writable(path: Path, *, writable: bool) -> None:
+    """Toggle only the write bits, preserving the file's read/execute bits.
+
+    Setting an absolute mode (e.g. ``0o444``) would strip the executable bit
+    that git tracks, producing a spurious mode change on protected scripts that
+    finalize commits and the merge guard then rejects. Read-modify-write keeps
+    everything except writability intact.
+    """
     try:
-        os.chmod(path, mode)
+        current = stat.S_IMODE(os.stat(path).st_mode)
+    except OSError as exc:  # pragma: no cover - platform dependent
+        log.warning("integrity: stat failed on %s: %s", path, exc)
+        return
+    new_mode = current | stat.S_IWUSR if writable else current & ~_WRITE_BITS
+    if new_mode == current:
+        return
+    try:
+        os.chmod(path, new_mode)
     except OSError as exc:  # pragma: no cover - platform dependent
         log.warning("integrity: chmod failed on %s: %s", path, exc)
 
@@ -91,10 +109,10 @@ def _chmod(path: Path, mode: int) -> None:
 def apply_readonly(root: Path, protected_paths: list[str]) -> None:
     """Best-effort: make protected files read-only. Never raises."""
     for path in iter_protected_files(root, protected_paths):
-        _chmod(path, stat.S_IREAD | stat.S_IRGRP | stat.S_IROTH)
+        _set_writable(path, writable=False)
 
 
 def clear_readonly(root: Path, protected_paths: list[str]) -> None:
     """Best-effort: restore writability so cleanup never fails. Never raises."""
     for path in iter_protected_files(root, protected_paths):
-        _chmod(path, stat.S_IWRITE | stat.S_IREAD)
+        _set_writable(path, writable=True)
