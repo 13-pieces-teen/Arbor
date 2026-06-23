@@ -32,6 +32,11 @@ see our [documentation](https://RUC-NLPIR.github.io/Arbor/docs/). 🧭 You can a
 choose the [CLI or Skill version](#-cli-and-skill-versions) depending on your
 environment and workflow.
 
+## 🎬 Demo
+
+
+https://github.com/user-attachments/assets/49c1a306-d2e9-49d6-9c83-65e38a62df30
+
 ## 📣 News
 
 - **2026-06** — **Built-in literature search & idea novelty checks.** Arbor can now ground its research in prior work via the public [alphaXiv](https://www.alphaxiv.org) API — zero config, no search endpoint or key. Novelty-check any idea before you build it with `arbor idea-check "<your idea>"`, or let the Coordinator vet every new branch automatically. See [Literature Search & Novelty Checks](#-literature-search--novelty-checks). 🔎
@@ -87,12 +92,6 @@ Together they repeat a six-step **arbor cycle**:
    abstracts the lesson upward so ancestor nodes and future ideas inherit it.
 6. **Decide** — the Coordinator chooses whether to merge, prune, continue, leave a
    node pending, or stop, using held-out validation for merge decisions.
-
-## 🎬 Demo
-
-
-https://github.com/user-attachments/assets/49c1a306-d2e9-49d6-9c83-65e38a62df30
-
 
 
 ## 🚀 CLI And Skill Versions
