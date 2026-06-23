@@ -89,6 +89,7 @@ packages = [
     "arbor.report",
     "arbor.search_agent",
     "arbor.webui",
+    "arbor.zoo",
     # The Agent Skill suite (top-level `skills/`) is shipped inside the wheel as
     # `arbor.skills_suite` so `arbor install` can find and copy it after a plain
     # `pip install`. `bundled_skills_root()` resolves to this directory.

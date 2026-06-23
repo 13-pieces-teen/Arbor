@@ -53,6 +53,7 @@ nav:
       - Interaction Modes: interaction-modes.md
       - Web UI & Monitoring: web-ui.md
       - Plugins: plugins.md
+      - Benchmark Zoo: zoo.md
       - Skills: skills.md
       - Outputs & Resume: outputs-and-resume.md
   - Reference:
@@ -113,6 +114,7 @@ plugins:
             Interaction Modes: 交互模式
             Web UI & Monitoring: Web UI 与监控
             Plugins: 插件
+            Benchmark Zoo: 基准动物园
             Skills: 技能
             Outputs & Resume: 输出与续跑
             Reference: 参考
