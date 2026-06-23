@@ -10,6 +10,7 @@ Two subcommands:
 
 from __future__ import annotations
 
+import subprocess
 from pathlib import Path
 
 import typer
@@ -99,3 +100,54 @@ def list_command(
     width = max(len(p.name) for p in packs)
     for p in packs:
         typer.echo(f"  {p.name.ljust(width)}  {p.description}")
+
+
+@benchmark_app.command("scaffold")
+def scaffold_command(
+    target_dir: Path = typer.Argument(..., help="Directory to scaffold (created if missing)."),
+    name: str = typer.Option(None, "--name", help="Benchmark name (default: dir name)."),
+    direction: str = typer.Option("maximize", "--direction", help="maximize | minimize."),
+    style: str = typer.Option("light", "--style", help="light | zoo."),
+    split_kind: str = typer.Option("seed_range", "--split-kind", help="seed_range | path."),
+    entrypoint: str = typer.Option("eval.py", "--entrypoint", help="eval.py | eval.sh."),
+    baseline: float = typer.Option(0.0, "--baseline", help="Declared baseline score (zoo)."),
+    edit: list[str] = typer.Option(["solution.py"], "--edit", help="Editable file/glob (repeatable)."),
+    git_init: bool = typer.Option(False, "--git-init", help="git init + baseline commit."),
+) -> None:
+    """Scaffold the Arbor-ready reference folder (light) or a full zoo benchmark (zoo)."""
+    from ...zoo import scaffold_benchmark
+
+    target = target_dir.resolve()
+    pack_name = name or target.name
+    if split_kind == "path":
+        splits = {"kind": "path", "dev": ["data/dev/**"], "test": ["data/test/**"]}
+    else:
+        splits = {"kind": "seed_range", "dev": {"base": 1000, "count": 3},
+                  "test": {"base": 9000, "count": 3}}
+    try:
+        res = scaffold_benchmark(
+            target, name=pack_name, metric_direction=direction, splits=splits,
+            baseline={"score": baseline, "tolerance": 0.0, "kind": "exact"},
+            edit=edit, style=style, eval_entrypoint=entrypoint,
+        )
+    except ValueError as exc:
+        typer.secho(f"error: {exc}", fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=2) from exc
+
+    if git_init and not (target / ".git").exists():
+        subprocess.run(["git", "init"], cwd=target, check=False)
+        subprocess.run(["git", "add", "-A"], cwd=target, check=False)
+        subprocess.run(["git", "commit", "-m", "baseline: scaffold Arbor benchmark structure"],
+                       cwd=target, check=False)
+
+    typer.echo(f"scaffolded {target.name} ({style}) …")
+    for f in res.created:
+        typer.secho(f"  created  {f}", fg=typer.colors.GREEN)
+    for f in res.skipped:
+        typer.secho(f"  skipped  {f} (exists)", fg=typer.colors.YELLOW)
+    for r in res.verify:
+        _render(r)
+    if res.next_steps:
+        typer.echo("\nnext steps:")
+        for s in res.next_steps:
+            typer.echo(f"  - {s}")

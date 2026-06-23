@@ -139,7 +139,8 @@ held-out protocol rather than a convenient fiction.
    separate from the loop that later optimizes it, or the evaluation is self-certifying.
 
 !!! note "Coming next"
-    A `arbor benchmark add "<paper / repo / dataset>"` flow will let Arbor search for,
-    download, and *draft* a benchmark from one you name — then hand it to the verifier and
-    to you for acceptance. The format and verifier on this page are the landing pad for
-    that flow.
+    Use `arbor benchmark scaffold <dir> --style zoo` to generate a fresh pack skeleton
+    (front-matter contract, eval stub, dev/test split, PROVENANCE card) and verify it
+    structurally. A future `arbor benchmark add "<paper / repo / dataset>"` flow will
+    additionally *search for and draft* a benchmark from one you name, then hand it to the
+    verifier and to you for acceptance.
