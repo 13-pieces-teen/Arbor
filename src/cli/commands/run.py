@@ -299,11 +299,28 @@ def run_command(
     # eval.sh, etc.) inline during the chat, so we don't show a
     # ceremonial preflight section here — just run silently and only
     # surface fatal issues as a red panel.
+    #
+    # Resolve the plugin's eval_contract so the contamination preflight can
+    # warn (zero-network) when the benchmark is likely in pretraining data.
+    # Covers both CLI-selected ("load") and project-YAML ("inherit") plugins;
+    # any failure degrades to no contract — same behaviour as before.
+    preflight_eval_contract: dict | None = None
+    if selected_plugin_mode != "disabled":
+        _plugin_name = selected_plugin or final_project_defaults.get("plugin")
+        if _plugin_name:
+            try:
+                from ...plugins.base import load_plugin
+                preflight_eval_contract = load_plugin(
+                    str(_plugin_name), [plan_cwd / "plugins"]
+                ).eval_contract
+            except Exception:  # noqa: BLE001 - preflight must never block a run
+                preflight_eval_contract = None
     checker = PreflightChecker(
         cwd=plan_cwd,
         provider=eff["provider"],
         explicit_api_key=eff["api_key"],
         verbose=verbose_preflight,
+        eval_contract=preflight_eval_contract,
     )
     results = checker.run_all_collect(render=verbose_preflight)
     fatal = [r for r in results if r.status == "fail"]

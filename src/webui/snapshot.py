@@ -78,6 +78,8 @@ def _idea_to_dict(rec: Any, now: float, run_started: float) -> dict[str, Any]:
         "hypothesis": rec.hypothesis,
         "status": rec.status,
         "score": rec.score,
+        "score_split": getattr(rec, "score_split", "dev"),
+        "test_score": getattr(rec, "test_score", None),
         "branch": rec.branch,
         "parent_id": rec.parent_id,
         "runtime_seconds": runtime,

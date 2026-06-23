@@ -34,6 +34,12 @@ LLM_ERROR = "llm.error"                   # {provider, error, retrying}
 # live for when scoring is moved onto the bus.
 EVAL_END = "eval.end"                     # {node_id, score, duration, error?}
 
+# Emitted when a protected path was changed during a run (manifest mismatch);
+# the node's dev score is invalidated and the branch becomes merge-ineligible.
+PROTECTED_TAMPER = "eval.protected_tamper"   # {node_id, branch, changes}
+# Emitted once at INIT with the contamination assessment for the benchmark.
+CONTAMINATION_ASSESSED = "eval.contamination_assessed"  # {status, reasons}
+
 # ── Convergence ──
 # NOT YET EMITTED: cli_logger renders this, but no emitter exists yet. Kept so
 # the renderer stays live for when convergence detection lands.

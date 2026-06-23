@@ -319,6 +319,7 @@ class CoordinatorOrchestrator:
 
         # ── Prefill eval_contract from plugin ────────────────────────────
         self._apply_eval_contract()
+        await self._assess_contamination()
 
         # Create the single persistent agent
         agent = self._create_coordinator()
@@ -504,6 +505,45 @@ class CoordinatorOrchestrator:
                     self.tree.meta[key] = plugin.eval_contract[key]
         self.tree.save()
         _print_status(f"Applied eval_contract from plugin '{plugin.name}': {plugin.eval_contract}")
+
+    async def _assess_contamination(self) -> None:
+        """Run the contamination probe once and record it in meta + an event.
+
+        Non-blocking: the probe itself never raises, and this wrapper swallows
+        anything unexpected so INIT cannot be derailed by a contamination check.
+        """
+        if not getattr(self.config, "contamination_probe", True):
+            return
+        from .contamination import ContaminationProbe
+        from ..events import types as ev
+
+        plugin = self.config.plugin
+        eval_contract = dict(getattr(plugin, "eval_contract", {}) or {})
+        # The contract comes from the plugin only. meta["contamination"] holds
+        # *our own* report from a prior run; feeding it back as an input would
+        # re-assess a report-shaped dict and downgrade the result to "unknown".
+        if not eval_contract.get("contamination"):
+            return  # nothing declared — skip silently
+        try:
+            report = await ContaminationProbe().assess(
+                dataset_info=self.tree.meta.get("dataset_info"),
+                eval_contract=eval_contract,
+                model=getattr(self.config, "model", None),
+                provider=None,  # active probe stays stubbed for now
+                timeout=getattr(self.config, "contamination_timeout", 60),
+            )
+        except Exception as exc:  # noqa: BLE001
+            log.warning("contamination: assessment failed: %s", exc)
+            return
+        self.tree.meta["contamination"] = report.to_dict()
+        self.tree.save()
+        self.bus.emit(ev.CONTAMINATION_ASSESSED, {
+            "status": report.status, "reasons": report.reasons,
+        })
+        if report.status in {"warn", "contaminated"}:
+            _print_status(
+                f"  Contamination: {report.status} — {'; '.join(report.reasons)}"
+            )
 
     def _recover_best_submission(self) -> None:
         """On emergency timeout, ensure the best submission is at the workspace root.

@@ -53,14 +53,27 @@ Shipped (default-off, so benchmark runs stay fair). See the
 Still open: enforcing the per-search round/visit caps as a hard cost bound, and
 surfacing per-run search cost (tracked under [1.3](#13-cost-and-scheduling)).
 
-### 1.2 Evaluation discipline
+### 1.2 Evaluation discipline ✅ *(shipped)*
 
-- Stronger held-out guarantees and clearer reporting of which split a number came
-  from.
-- **Contamination checks** — flag when a benchmark's test set is likely already in
-  pretraining data, since that makes the number meaningless.
-- Tamper-proof evals — confirm protected paths are genuinely unwritable during a run
-  (AutoSOTA has anti-tampering; we want the same guarantee).
+Shipped:
+
+- **Split provenance** — every score is tagged with the split it came from
+  (`dev`/`test`) at the data-model level and rendered labeled in REPORT.md, the
+  CLI dashboard, and the WebUI. The verified B_test score is recorded on the node
+  and trunk meta automatically at merge.
+- **Tamper-proof evals** — protected paths are hash-verified at runtime, not only
+  at merge. Each executor worktree gets a SHA-256 manifest of its protected files
+  plus best-effort OS read-only; any mid-run change discards the node's dev score
+  and blocks the merge (emitting `eval.protected_tamper`). This closes the gap
+  where an executor could inflate B_dev by writing to `data/`/`evaluation/`.
+- **Contamination checks** — a declarative `eval_contract.contamination` block
+  (release date, `is_public`, canaries) drives a non-blocking preflight warning
+  and an INIT-time probe (`eval.contamination_assessed`, recorded in tree meta).
+  The declarative heuristic + canary scan ship now; an LLM membership-inference
+  probe is a planned follow-up.
+
+See the [Plugins](plugins.md) guide for the `contamination` block and runtime
+protected-path enforcement.
 
 ### 1.3 Cost and scheduling
 

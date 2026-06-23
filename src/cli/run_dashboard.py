@@ -1306,7 +1306,8 @@ class RunDashboard:
             if rec is None:
                 continue
             glyph, _, status_style = _STATUS_DECOR.get(rec.status, ("◌", "dim", "dim"))
-            score = f" {rec.score:.4f}" if rec.score is not None else ""
+            split = getattr(rec, "score_split", "dev")
+            score = f" {rec.score:.4f} ({split})" if rec.score is not None else ""
             rows.append(
                 f"{escape(glyph)} [yellow]{escape(node_id):<4}[/] "
                 f"[{status_style}]{escape(rec.status):<8}[/]{escape(score):>9}  "
@@ -1323,9 +1324,12 @@ class RunDashboard:
             if s.baseline_score is not None else "[dim]baseline[/] —"
         )
         rows.append(
-            f"[dim]trunk[/] {s.trunk_score:.4f}"
-            if s.trunk_score is not None else "[dim]trunk[/] —"
+            f"[dim]trunk·dev[/] {s.trunk_score:.4f}"
+            if s.trunk_score is not None else "[dim]trunk·dev[/] —"
         )
+        test_trunk = getattr(s, "test_trunk_score", None)
+        if test_trunk is not None:
+            rows.append(f"[dim]trunk·test[/] {test_trunk:.4f}")
         rows.append(
             f"[dim]best branch[/] {s.best_score:.4f}"
             if s.best_score is not None else "[dim]best branch[/] —"

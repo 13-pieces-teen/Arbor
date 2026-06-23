@@ -40,6 +40,8 @@ class Node:
     insight: str = ""  # What was learned (both direct and propagated)
     result: str = ""  # Factual description of experiment outcome
     score: float | None = None  # Absolute score (e.g. 45.2%)
+    score_split: str = "dev"  # which split `score` came from: "dev" | "test"
+    test_score: float | None = None  # verified B_test score, set at merge
     code_ref: str | None = None  # Git branch name
     related_work: str = ""  # SearchAgent / web-search annotation (Markdown)
     grounding: str = ""  # grounding-lane citations that shaped this idea (Markdown)
@@ -59,6 +61,8 @@ class Node:
         "insight",
         "result",
         "score",
+        "score_split",
+        "test_score",
         "code_ref",
         "related_work",
         "grounding",
@@ -82,6 +86,10 @@ class Node:
             d["result"] = self.result
         if self.score is not None:
             d["score"] = self.score
+            if self.score_split != "dev":
+                d["score_split"] = self.score_split
+        if self.test_score is not None:
+            d["test_score"] = self.test_score
         if self.code_ref is not None:
             d["code_ref"] = self.code_ref
         if self.related_work:
@@ -108,6 +116,8 @@ class Node:
             insight=data.get("insight", ""),
             result=data.get("result", ""),
             score=data.get("score", data.get("score_delta")),  # backward compat
+            score_split=data.get("score_split", "dev"),
+            test_score=data.get("test_score"),
             code_ref=data.get("code_ref"),
             related_work=data.get("related_work", ""),
             grounding=data.get("grounding", ""),

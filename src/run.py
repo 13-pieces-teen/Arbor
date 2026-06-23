@@ -153,8 +153,9 @@ def _generate_summary_report(
                     hyp = n.get("hypothesis", "?")[:60]
                     insight = (n.get("insight") or "")[:60]
                     exp_link = f"[{nid}](experiments/{nid}/report.md)"
+                    split = n.get("score_split", "dev")
                     lines.append(
-                        f"| {i} | {exp_link} | {n['score']:.1f}% | {n['status']} | {hyp} | {insight} |"
+                        f"| {i} | {exp_link} | {n['score']:.1f}% ({split}) | {n['status']} | {hyp} | {insight} |"
                     )
                 lines.append("")
 
@@ -291,7 +292,8 @@ def _generate_research_readme(log_dir: Path, run_info: dict, dur_str: str) -> No
                 cur = parent
             chain.reverse()
 
-            lines.append(f"### {i}. Node `{nid}` — score `{score}` ({status}){delta_txt}\n")
+            split = n.get("score_split", "dev")
+            lines.append(f"### {i}. Node `{nid}` — score `{score}` ({split}, {status}){delta_txt}\n")
             lines.append(f"**Hypothesis**: {hyp}\n")
             if chain:
                 lines.append("**Lineage**:")

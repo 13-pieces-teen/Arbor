@@ -37,6 +37,7 @@ class PreflightChecker:
       2. cwd exists and contains files
       3. git installed and repo not dirty (warn if no repo at all)
       4. an eval entry point exists (eval.sh / evaluate.py / similar)
+      5. contamination signals declared in the eval contract (zero-network warn)
     """
 
     EVAL_CANDIDATES = ("eval.sh", "evaluate.sh", "run_eval.sh",
@@ -44,11 +45,13 @@ class PreflightChecker:
 
     def __init__(self, cwd: Path, provider: str | None,
                  explicit_api_key: str | None = None,
-                 *, verbose: bool = False) -> None:
+                 *, verbose: bool = False,
+                 eval_contract: dict | None = None) -> None:
         self.cwd = cwd.resolve()
         self.provider = (provider or "anthropic").lower()
         self.explicit_api_key = explicit_api_key
         self.verbose = verbose
+        self.eval_contract = eval_contract or {}
 
     def run_all(self) -> bool:
         """Print results and return True iff none failed (legacy)."""
@@ -83,6 +86,7 @@ class PreflightChecker:
             self._check_cwd,
             self._check_git,
             self._check_eval,
+            self._check_contamination,
         ]
         results: list[CheckResult] = []
         for check in checks:
@@ -264,3 +268,23 @@ class PreflightChecker:
             f"no eval script found ({', '.join(self.EVAL_CANDIDATES)})",
             hint="create one (a command that prints a numeric score), or rely on the agent to find one",
         )
+
+    # ── Check 5: contamination (declarative, zero-network) ─────────
+
+    def _check_contamination(self) -> CheckResult:
+        """Warn when the declared contamination block suggests the test set is
+        already in pretraining data. Zero-network — the active probe runs later
+        in the coordinator, not here."""
+        from ..coordinator.contamination import declarative_assess
+
+        block = (self.eval_contract or {}).get("contamination", {}) or {}
+        if not block:
+            return CheckResult("contamination", "pass", "no contamination signals declared")
+        report = declarative_assess(block, model=None)
+        if report.status in {"warn", "contaminated"}:
+            return CheckResult(
+                "contamination", "warn",
+                "; ".join(report.reasons) or "benchmark may be in pretraining data",
+                hint="held-out numbers may be inflated — interpret with care",
+            )
+        return CheckResult("contamination", "pass", "no contamination signals declared")

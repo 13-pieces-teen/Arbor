@@ -546,6 +546,15 @@ class GitMergeBranchTool(Tool):
         if current and current != target_branch:
             await _run_git(f"git checkout {shlex.quote(current)}", self.cwd)
 
+        # Record the verified test score on the node + trunk meta directly, so
+        # split provenance does not depend on the LLM following the instruction
+        # in the result string below.
+        try:
+            await self._tree.async_update_node(node_id, test_score=test_score, status="merged")
+        except Exception as exc:  # noqa: BLE001
+            log.warning("Failed to record test_score on node %s: %s", node_id, exc)
+        self._tree.meta["test_trunk_score"] = test_score
+
         verified_tag = " (independently verified)" if eval_cmd_test else " (LLM-reported, NOT verified)"
         result = (
             f"Successfully merged {source_branch} into {target_branch}.\n"

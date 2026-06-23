@@ -67,12 +67,44 @@ Everything else is optional and layered on top. The full set of fields:
 | `name` | ✓ | Plugin identifier, referenced by `plugin:` in config. |
 | `description` | ✓ | One-line summary shown in `arbor` plugin listings. |
 | `schema_version` |  | Format version (currently `1`). |
-| `eval_contract` | ✓ | How to score: `metric_direction`, `eval_cmd` (with `{cwd}` substitution), and optional `submission_path` / `sample_submission_path`. |
-| `protected_paths` |  | Glob patterns that are read-only to executors — your data and harness. |
+| `eval_contract` | ✓ | How to score: `metric_direction`, `eval_cmd` (with `{cwd}` substitution), and optional `submission_path` / `sample_submission_path`. May also carry a `contamination` block (see below). |
+| `protected_paths` |  | Glob patterns that are read-only to executors — your data and harness. Hash-verified at runtime, not only at merge (see below). |
 | `required_outputs` |  | Artifacts that must exist for a run to count as valid. |
 | `profiles` |  | Named budget bundles (`max_cycles`, `max_tree_depth`, `executor_timeout`, `time_budget`), selected with `plugin_profile`. |
 | `config_overrides` |  | Default config values the plugin sets for every run. |
 | Prompt injections |  | Domain guidance merged into the agents' system prompts (see below). |
+
+### Protected paths are enforced at runtime
+
+`protected_paths` are now **tamper-evident during a run**, not only checked at
+merge. When an executor starts, Arbor records a SHA-256 manifest of every
+protected file in its worktree and marks them read-only (best-effort — strong on
+POSIX, weaker on Windows). After the executor finishes, the manifest is
+re-verified: if any protected file was modified, added, or removed, the node's
+dev score is **discarded** (it can no longer be trusted), the branch becomes
+unmergeable, and a `eval.protected_tamper` event is emitted. The merge guard's
+`git diff` check still rejects committed changes to protected paths on top of
+this. Disable with `enforce_protected: false` (debugging only).
+
+### Contamination block (optional)
+
+`eval_contract.contamination` declares what Arbor needs to warn when a benchmark's
+test set may already be in pretraining data. All fields are optional:
+
+```yaml
+eval_contract:
+  contamination:
+    release_date: "2024-01-01"   # when the test set became public (ISO date)
+    is_public: true              # test set / answers are publicly posted
+    source_url: "https://..."    # where it lives
+    canaries: ["BENCHMARK-CANARY-GUID-..."]  # strings that must not appear in outputs
+```
+
+The declarative heuristic (release date vs. model cutoff, `is_public`) and the
+canary scan run today; an LLM membership-inference probe is a planned follow-up.
+The check is **non-blocking** — it surfaces a preflight warning and an INIT-time
+`eval.contamination_assessed` event (recorded in the tree meta), and never halts
+a run. Tune with `contamination_probe` / `contamination_timeout` in config.
 
 ### Prompt injection points
 

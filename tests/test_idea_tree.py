@@ -220,3 +220,34 @@ def test_json_round_trip(tmp_path) -> None:
     assert loaded.get_node("1").hypothesis == "h1"
     assert loaded.meta["metric_direction"] == "minimize"
     assert [n.id for n in loaded.get_path_to_root("1.1")] == ["1.1", "1", "ROOT"]
+
+
+def test_node_roundtrips_split_fields():
+    n = Node(id="1", parent_id="ROOT", score=42.0, score_split="dev", test_score=40.0)
+    d = n.to_dict()
+    assert d.get("score_split", "dev") == "dev"  # omitted when default
+    assert d["test_score"] == 40.0
+    back = Node.from_dict(d)
+    assert back.score_split == "dev"
+    assert back.test_score == 40.0
+
+
+def test_node_nondefault_split_is_written():
+    n = Node(id="1", parent_id="ROOT", score=40.0, score_split="test")
+    d = n.to_dict()
+    assert d["score_split"] == "test"
+    assert Node.from_dict(d).score_split == "test"
+
+
+def test_old_node_dict_defaults_split_fields():
+    # a node persisted before this feature has neither key
+    back = Node.from_dict({"id": "1", "parent_id": "ROOT", "score": 10.0})
+    assert back.score_split == "dev"
+    assert back.test_score is None
+
+
+def test_default_split_omitted_from_dict():
+    n = Node(id="1", parent_id="ROOT")  # no score
+    d = n.to_dict()
+    assert "score_split" not in d  # omitted when there is no score
+    assert "test_score" not in d
