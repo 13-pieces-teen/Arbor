@@ -27,6 +27,13 @@ from .worktree import (
     _finalize_worktree,
     _remove_worktree,
 )
+from .integrity import (
+    apply_readonly,
+    build_protected_manifest,
+    clear_readonly,
+    verify_protected_manifest,
+)
+from .protected import resolve_protected_paths
 from .executor_io import (
     _build_executor_prompt,
     _build_resume_context,
@@ -187,6 +194,63 @@ async def _run_after_executor_hook(
         snapshot_name = f"{node_id}{ext}"
         shutil.copy2(submission, snapshot_dir / snapshot_name)
         log.info("Snapshot submission for %s -> submissions/%s", node_id, snapshot_name)
+
+
+# ---------------------------------------------------------------------------
+# Protected-path tamper guard
+# ---------------------------------------------------------------------------
+
+def _guard_protected(config: Any, tree: Any, worktree_path: Path) -> tuple[list[str], dict[str, str]]:
+    """Snapshot + lock protected paths in a fresh worktree.
+
+    Returns ``(resolved_paths, manifest)``. Both empty when enforcement is off
+    or no protected paths are configured. Never raises.
+    """
+    if not getattr(config, "enforce_protected", True):
+        return [], {}
+    paths = resolve_protected_paths(config, getattr(config, "plugin", None), tree.meta)
+    if not paths:
+        return [], {}
+    try:
+        manifest = build_protected_manifest(worktree_path, paths)
+        apply_readonly(worktree_path, paths)
+        return paths, manifest
+    except Exception as exc:  # noqa: BLE001
+        log.warning("integrity: failed to guard protected paths: %s", exc)
+        return [], {}
+
+
+def _check_tamper(
+    config: Any,
+    tree: Any,
+    worktree_path: Path,
+    paths: list[str],
+    manifest: dict[str, str],
+    node_id: str,
+    branch: str,
+) -> list[Any]:
+    """Clear read-only + verify the manifest. Emits PROTECTED_TAMPER on change."""
+    if not paths:
+        return []
+    from ...events import types as ev
+
+    clear_readonly(worktree_path, paths)
+    try:
+        changes = verify_protected_manifest(worktree_path, paths, manifest)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("integrity: verify failed (treating as clean): %s", exc)
+        return []
+    if changes:
+        tree.bus.emit(ev.PROTECTED_TAMPER, {
+            "node_id": node_id,
+            "branch": branch,
+            "changes": [{"path": c.path, "kind": c.kind} for c in changes],
+        })
+        log.warning(
+            "integrity: node %s tampered with protected paths: %s",
+            node_id, ", ".join(f"{c.path}({c.kind})" for c in changes),
+        )
+    return changes
 
 
 # ---------------------------------------------------------------------------
@@ -457,6 +521,9 @@ async def _run_single_executor(
         "cycle_num": cycle_num,
     })
 
+    # Snapshot + lock protected paths so any mid-run tampering is detectable.
+    protected_paths, protected_manifest = _guard_protected(config, tree, worktree_path)
+
     # ── 4-6. Build the executor agent and run it under timeout ──────────
     executor_t0 = asyncio.get_running_loop().time()
     raw_report, agent_turns, stop_reason, agent = await _build_and_run_executor_agent(
@@ -474,6 +541,15 @@ async def _run_single_executor(
     )
 
     # ── 7. Finalize & clean up worktree ─────────────────────────────────
+    # Verify protected paths BEFORE finalize commits anything, so uncommitted
+    # tampering is caught regardless of what gets committed to the branch.
+    tamper_changes: list[Any] = []
+    if worktree_path is not None:
+        tamper_changes = _check_tamper(
+            config, tree, worktree_path, protected_paths, protected_manifest,
+            node_id, actual_branch,
+        )
+
     if worktree_path is not None:
         try:
             await _finalize_worktree(worktree_path, node_id)
@@ -507,6 +583,18 @@ async def _run_single_executor(
     code_ref = parsed.get("code_ref") or actual_branch
     eval_status = parsed.get("eval_status", "failed_to_run")
 
+    # A tampered protected path makes the dev score untrustworthy: discard it so
+    # this node cannot be merged on an inflated number.
+    insight_override = ""
+    if tamper_changes:
+        score = None
+        eval_status = "tampered"
+        insight_override = (
+            "Protected path(s) modified during the run: "
+            + ", ".join(f"{c.path}({c.kind})" for c in tamper_changes)
+            + ". Dev score discarded; branch is not mergeable."
+        )
+
     # ── 9. Update tree node ─────────────────────────────────────────────
     # Only a real score (or an intentionally-skipped eval on solid work) counts
     # as "done"; turn-cap / timeout / error / eval-crash become "needs_retry".
@@ -520,7 +608,8 @@ async def _run_single_executor(
         node_id,
         status=new_status,
         score=score,
-        insight=insight or ("Timed out" if raw_report.startswith("[Timed out") else ""),
+        score_split="dev",
+        insight=insight_override or insight or ("Timed out" if raw_report.startswith("[Timed out") else ""),
         result=result_text or raw_report[:300],
         code_ref=code_ref,
         eval_status=eval_status,
