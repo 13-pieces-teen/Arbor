@@ -19,17 +19,20 @@ from .pack import (
     load_contract,
     read_front_matter,
 )
+from .scaffold import ScaffoldResult, scaffold_benchmark
 from .verify import VerifyResult, verify_pack
 
 __all__ = [
     "EVAL_ENTRYPOINTS",
     "Contract",
     "PackSummary",
+    "ScaffoldResult",
     "VerifyResult",
     "discover_packs",
     "find_eval_entrypoint",
     "is_pack_dir",
     "load_contract",
     "read_front_matter",
+    "scaffold_benchmark",
     "verify_pack",
 ]
