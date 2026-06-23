@@ -433,6 +433,13 @@ class CoordinatorConfig(ProxyModel):
     eval_retries: int = 1  # extra B_test attempts after a transient failure
     eval_retry_base_delay: float = 5.0
     eval_retry_max_delay: float = 30.0
+    # Tamper-proofing: hash protected paths at worktree creation and verify
+    # before trusting a dev score; best-effort OS read-only on top.
+    enforce_protected: bool = True
+    protected_paths: list[str] = PydField(default_factory=list)
+    # Contamination check (non-blocking; auto-falls-back to declarative).
+    contamination_probe: bool = True
+    contamination_timeout: int = 60
 
     # ── Loop ─────────────────────────────────────────────────────────
     max_turns: int = 500  # total max turns for the single persistent agent
