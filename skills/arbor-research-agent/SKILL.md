@@ -118,6 +118,11 @@ After intake:
 
 1. Load `arbor-agent-orchestrator`.
 2. Ensure `arbor-agent-setup-intake` receives the contract.
+   - If the target is not eval-ready (no runnable eval, no dev/test split, or a
+     dirty/absent git repo), the `arbor-agent-setup-intake` phase scaffolds the
+     measurement plumbing via the `scaffold_benchmark` tool and persists
+     `ARBOR_CONTRACT.md` + `research_config.yaml`. The entry point stays a thin
+     shell — it does not scaffold directly.
 3. Let the orchestrator load phase skills as needed:
    - `arbor-agent-coordinator`
    - `arbor-agent-ideate`

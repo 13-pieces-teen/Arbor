@@ -49,6 +49,37 @@ The instruction passed to the coordinator must contain all five components:
 Do not prescribe a specific approach in the contract. The coordinator owns
 idea generation.
 
+## Scaffold When Not Eval-Ready
+
+Some targets arrive as code only — no runnable eval, no dev/held-out split, or
+no clean git repo. Do not dead-end: scaffold the *measurement plumbing* (never
+the solution) so the coordinator has a metric to optimize.
+
+- Prefer the keyless MCP tool `scaffold_benchmark`. `style="light"` produces a
+  runnable target (eval entrypoint printing `score:`, a dev/test split, an
+  editable `solution.py`); `style="zoo"` additionally writes the README
+  front-matter contract + `PROVENANCE.md` and runs the structural verifier.
+  Pass `git_init=true` to initialize and commit a baseline.
+- Fallback when the MCP server is absent:
+  `arbor benchmark scaffold <dir> [--style zoo] [--git-init]`.
+- Only scaffold after the user confirms what counts as success. The tool is
+  idempotent and non-destructive — report created vs skipped, never overwrite.
+
+## Persist The One-Screen Contract
+
+Once the contract is confirmed, persist it at the target root so it outlives the
+chat (the durable upgrade over an ephemeral on-screen contract):
+
+- `ARBOR_CONTRACT.md` — one screen: target dir, metric (name / command /
+  direction), baseline anchor, ambition, scope, dev/test discipline, edit
+  surface, and budget (suggested max cycles).
+- `research_config.yaml` — machine-readable, auto-detected by `arbor`:
+  `task` (the contract paragraph), `coordinator.max_cycles`,
+  `coordinator.ui.interaction_mode: review` (safest default; change on request).
+  Follow `examples/research_config.example.yaml`.
+
+These are written during setup, before handing the contract to the coordinator.
+
 ## Preflight Checks
 
 Mirror `arbor run` preflight:
