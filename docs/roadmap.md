@@ -84,73 +84,47 @@ protected-path enforcement.
 
 ## Direction 2 — External resources
 
-### 2.1 Benchmark zoo, organized by domain
+### 2.1 Benchmark zoo, organized by domain 🚧 *(format + tooling shipped; collection growing)*
 
-A curated collection of tasks already in Arbor's scorable-repo form, grouped by
-domain (e.g. vision, NLP, time series, optimization), each using a published
-paper's result as the baseline to beat. It lives in the repo as `arbor-zoo/`, one
-folder per benchmark, and serves first as Arbor's own regression harness — not a
-leaderboard of our wins. Below is the format we intend to standardize on; none of
-it is built yet.
+A curated collection of tasks in one standard format, grouped by domain (e.g.
+vision, NLP, time series, optimization), each using a published paper's result as
+the baseline to beat. It lives in the repo as `arbor-zoo/`, one folder per
+benchmark, and serves first as Arbor's own regression harness — not a leaderboard
+of our wins.
 
-**Repo layout.** `arbor-zoo/<benchmark-name>/`, one folder per benchmark; folders
-prefixed `_` (e.g. `_template`) are scaffolding and skipped by tooling.
+Shipped — the Task Pack format, the verifier, and a first reference pack. See the
+[Benchmark Zoo](zoo.md) guide for the full spec and the verifier's check list:
 
-**What each benchmark folder holds** — the existing scorable-repo contract plus
-two metadata files and a human README:
+- **Task Pack format**, one folder per benchmark, with the contract carried in the
+  **README front-matter** (metric, dev/test split, baseline, edit surface) — there
+  is *no separate manifest file*. Alongside it: a runnable baseline (e.g.
+  `solution.py`), a protected eval entrypoint (`eval.sh` / `eval.py`) that prints
+  exactly one `score: <float>` line for `dev`|`test`, an optional protected
+  `task.py` (deterministic `generate_problem` + an *independent* `is_solution`
+  verifier, so "fast but wrong" can't score), and a `PROVENANCE.md` card (source,
+  license, setup/environment, baseline reproduction, contamination, caveats).
+- **`arbor benchmark verify`** gates a pack: front-matter + `PROVENANCE.md` parse
+  and are complete, the eval emits a parseable score on dev and test, the baseline
+  reproduces its claimed number, dev/test are held out, protected paths hold, and
+  the eval is deterministic/offline. Exits non-zero on any failure — an unverified
+  pack does not enter the zoo. **`arbor benchmark list`** indexes a zoo directory
+  (a plain index, not a leaderboard).
+- **Reference pack + scaffolding**:
+  [`algotune_knn`](https://github.com/RUC-NLPIR/Arbor/tree/main/arbor-zoo/algotune_knn)
+  (verified) and a `_template` to copy. Folders prefixed `_` are skipped by tooling.
 
-| File | Role |
-| --- | --- |
-| `solution.py` | The editable artifact Arbor optimizes (the only edit surface). |
-| `eval.sh` / `eval.py` | Protected eval; `bash eval.sh dev\|test` prints one `score: <float>` line. |
-| `data/` | Bundled data, or a download script when it can't be redistributed. |
-| `pack.yaml` | Machine-readable manifest (metric, splits, baseline, setup, license). |
-| `PROVENANCE.md` | Source, license, baseline reproduction, contamination assessment. |
-| `README.md` | Human intro with six fixed sections (see below). |
+Still open:
 
-**The Task Pack format.** Promote today's implicit scorable-repo contract into one
-versioned standard: an editable artifact, a protected eval invoked as
-`bash eval.sh dev|test` that prints exactly one `score: <float>` line, disjoint
-dev/test splits with test genuinely held out, plus the `pack.yaml` manifest and
-`PROVENANCE.md` card. Manifest field names reuse the `plugin` vocabulary
-(`eval_contract` / `protected_paths` / `profiles`) so a pack can lower into a
-[plugin](plugins.md) without rework.
-
-**Setup requirements, made explicit.** Because some benchmarks need extra API keys,
-services, or a GPU to run, `pack.yaml` carries a machine-readable `setup:` block
-(`hardware`, `python`, `install`, `env`, `services`) so tooling can warn before a
-run, mirrored in prose in the README's "Setup & requirements" section.
-
-**Provenance card.** `PROVENANCE.md` is what separates a trustworthy pack from a
-plausible-looking one: source, data origin & license, how it was collected,
-baseline reproduction (published vs. what the shipped baseline prints, and the
-gap), a mandatory contamination assessment, and known caveats.
-
-**Two READMEs.** A top-level `arbor-zoo/README.md` (the index, the format, how to
-run a benchmark with Arbor, how to add one) and a per-benchmark `README.md` with a
-fixed six-section order: Task & metric → Setup & requirements → Run the baseline →
-Optimize with Arbor → Provenance.
-
-**`arbor benchmark verify`.** A checker — and the verifier's spec — that confirms:
-`pack.yaml`/`PROVENANCE.md` parse and are complete, the eval emits a parseable
-score on dev and test, the baseline reproduces the claimed number, dev/test are
-disjoint and held out, protected paths are unwritable, the eval is deterministic
-and offline, and the license permits the shipped use. A pack that fails any check
-doesn't enter the zoo — eval correctness is the foundation, and an unverified pack
-is worse than none.
-
-**Semi-automatic conversion.** Use the intake agent to *draft* a Task Pack from a
-raw benchmark, then gate it behind the verifier and a human accept step. Automatic
-means draft-automatic, accept-verified — never auto-accepted. The agent that
-*implements* a baseline must be separate from the loop that later optimizes it, so
-the evaluation isn't self-certifying.
-
-**Licensing.** Ship data when redistribution is allowed; otherwise ship a download
-script plus the provenance card.
-
-Start small: 3–5 high-quality, human-checked packs across distinct task shapes,
-using [`examples/algotune_knn`](https://github.com/RUC-NLPIR/Arbor/tree/main/examples/algotune_knn)
-as the reference, then grow. Cap on quality, not count.
+- **Grow the collection** to 3–5 high-quality, human-checked packs across distinct
+  task shapes, using `algotune_knn` as the reference. Cap on quality, not count.
+- **`arbor benchmark add`** — semi-automatic conversion: the intake agent *drafts*
+  a Task Pack from a raw benchmark, gated behind the verifier and a human accept
+  step (draft-automatic, accept-verified — never auto-accepted). The
+  baseline-implementing agent stays separate from the loop that later optimizes it,
+  so evaluation isn't self-certifying. *(Designed; not yet built.)*
+- **Lower a pack into a [plugin](plugins.md)** for one-line retargeting — the
+  front-matter contract reuses the `plugin` vocabulary (`eval_contract` /
+  `protected_paths`), so it should fall out with little rework (pairs with 2.2).
 
 
 ### 2.2 Plugin gallery

@@ -44,13 +44,22 @@
 尚未做：把每次检索的轮次/visit 上限做成硬性成本约束，以及给出按 run 的检索成本（归在
 [1.3](#sec-1-3)）。
 
-### 1.2 评测纪律
+### 1.2 评测纪律 ✅ *（已完成）*
 
-- 更强的 held-out 保证，并更清楚地标明一个数字来自哪个 split。
-- **污染自检**——当一个基准的 test set 很可能已在预训练数据里时给出标记，因为那会让数字
-  失去意义。
-- eval 防篡改——确认受保护路径在运行中确实不可写（AutoSOTA 有 anti-tampering，我们要同样
-  的保证）。
+已完成：
+
+- **Split 溯源**——每个分数在数据模型层就标注来自哪个 split（`dev`/`test`），并在
+  REPORT.md、CLI dashboard 和 WebUI 中带标签渲染。验证过的 B_test 分数在 merge 时自动
+  记录到节点与 trunk meta。
+- **eval 防篡改**——受保护路径在运行中（而不仅 merge 时）做哈希校验。每个 executor 的
+  worktree 会拿到其受保护文件的 SHA-256 清单，外加尽力而为的 OS 只读；运行中任何改动都会
+  作废该节点的 dev 分数并阻止 merge（发出 `eval.protected_tamper`）。这堵上了 executor
+  通过写 `data/`/`evaluation/` 抬高 B_dev 的口子。
+- **污染自检**——声明式的 `eval_contract.contamination` 块（发布日期、`is_public`、
+  canary）驱动一个非阻塞的 preflight 警告和一次 INIT 期探测（`eval.contamination_assessed`，
+  记录在 tree meta）。声明式启发式 + canary 扫描现已随包；LLM 成员推断探测作为后续。
+
+关于 `contamination` 块与运行时受保护路径强制，见 [Plugins](plugins.md) 指南。
 
 ### 1.3 成本与调度 {#sec-1-3}
 
@@ -61,60 +70,39 @@
 
 ## 方向二 —— 外部资源
 
-### 2.1 按 domain 划分的 benchmark zoo
+### 2.1 按 domain 划分的 benchmark zoo 🚧 *（格式与工具已完成；集合扩充中）*
 
-一个经过筛选、已做成 Arbor 可评分 repo 形式的任务集合，按领域分组（如 CV、NLP、时序、
-优化），每个任务用一篇已发表论文的结果作为要超越的 baseline。它以 `arbor-zoo/` 放在仓库
-里，每个基准一个文件夹，首要用途是 Arbor 自己的回归 harness——而非我们战绩的榜单。下面是
-我们打算标准化的格式，目前都还没实现。
+一个经过筛选、统一格式的任务集合，按领域分组（如 CV、NLP、时序、优化），每个任务用一篇已
+发表论文的结果作为要超越的 baseline。它以 `arbor-zoo/` 放在仓库里，每个基准一个文件夹，
+首要用途是 Arbor 自己的回归 harness——而非我们战绩的榜单。
 
-**仓库布局。** `arbor-zoo/<benchmark-name>/`，每个基准一个文件夹；以 `_` 开头的（如
-`_template`）是脚手架，工具会跳过。
+已完成——Task Pack 格式、校验器，以及第一个参考 pack。完整规格与校验器的检查清单见
+[Benchmark Zoo](zoo.md) 指南：
 
-**每个基准文件夹包含**——已有的可评分 repo 契约，再加两个元数据文件和一份给人读的 README：
+- **Task Pack 格式**，每个基准一个文件夹，契约写在 **README front-matter** 里（metric、
+  dev/test 切分、baseline、编辑面）——*没有单独的清单文件*。同目录还有：可运行的 baseline
+  （如 `solution.py`）、一个受保护的 eval 入口（`eval.sh` / `eval.py`），对 `dev`|`test`
+  各打印恰好一行 `score: <float>`、一个可选的受保护 `task.py`（确定性的 `generate_problem`
+  + *独立的* `is_solution` 验证器，让“快但错”无法得分），以及一份 `PROVENANCE.md` 卡片
+  （来源、license、setup/环境、baseline 复现、污染、注意事项）。
+- **`arbor benchmark verify`** 为一个 pack 把关：front-matter + `PROVENANCE.md` 可解析
+  且完整、eval 在 dev 与 test 上各产出一个可解析的分数、baseline 能复现声称的数字、
+  dev/test held out、受保护路径不可写、eval 确定且离线。任何一项失败即非零退出——未经校验
+  的 pack 不进 zoo。**`arbor benchmark list`** 索引一个 zoo 目录（只是索引，不是榜单）。
+- **参考 pack + 脚手架**：
+  [`algotune_knn`](https://github.com/RUC-NLPIR/Arbor/tree/main/arbor-zoo/algotune_knn)
+  （已校验）和一个可复制的 `_template`。以 `_` 开头的文件夹被工具跳过。
 
-| 文件 | 作用 |
-| --- | --- |
-| `solution.py` | Arbor 优化的可编辑 artifact（唯一编辑面）。 |
-| `eval.sh` / `eval.py` | 受保护 eval；`bash eval.sh dev\|test` 打印一行 `score: <float>`。 |
-| `data/` | 随包数据；不可再分发时放下载脚本。 |
-| `pack.yaml` | 机器可读清单（metric、splits、baseline、setup、license）。 |
-| `PROVENANCE.md` | 来源、license、baseline 复现、污染评估。 |
-| `README.md` | 给人读的介绍，含六个固定章节（见下）。 |
+尚未做：
 
-**Task Pack 格式。** 把今天隐式的可评分 repo 契约提升为一个有版本的标准：一个可编辑
-artifact、一个以 `bash eval.sh dev|test` 调用、只打印一行 `score: <float>` 的受保护
-eval、不相交且 test 真正 held out 的 dev/test 切分，外加 `pack.yaml` 清单和
-`PROVENANCE.md` 卡片。清单字段名复用 `plugin` 词汇（`eval_contract` / `protected_paths`
-/ `profiles`），所以一个 pack 无需返工即可降级成 [plugin](plugins.md)。
-
-**把 setup 要求写明。** 因为有些基准需要额外的 API key、服务或 GPU 才能跑，`pack.yaml`
-带一个机器可读的 `setup:` 块（`hardware`、`python`、`install`、`env`、`services`），让
-工具在运行前就能警告，并在 README 的"Setup & requirements"章节里用人读语言镜像一遍。
-
-**来源卡片。** `PROVENANCE.md` 是可信 pack 与"看起来像样"的 pack 之间的分界：来源、数据
-来源与 license、如何收集、baseline 复现（已发表数字 vs 随包 baseline 实际打印的数字，及
-差距）、一项必填的污染评估，以及已知注意事项。
-
-**两个 README。** 一个顶层 `arbor-zoo/README.md`（索引、格式、怎么用一个基准跑 Arbor、
-怎么新增一个），以及每个基准一个 `README.md`，六个固定章节顺序：Task & metric →
-Setup & requirements → Run the baseline → Optimize with Arbor → Provenance。
-
-**`arbor benchmark verify`。** 一个校验器——也是校验器的规格——确认：`pack.yaml` /
-`PROVENANCE.md` 可解析且完整、eval 在 dev 与 test 上各产出一个可解析的分数、baseline 能
-复现声称的数字、dev/test 不相交且 held out、受保护路径不可写、eval 确定且离线、license
-允许随包用途。任何一项不通过的 pack 都不进 zoo——eval 正确性是地基，未经校验的 pack 比
-没有更糟。
-
-**半自动转换。** 用 intake agent 从原始基准*起草*一个 Task Pack，再由校验器和人工接受
-这一步把关。自动指的是起草自动、接受需校验——绝不自动接受。*实现* baseline 的 agent 必须
-与之后优化它的 loop 分开，否则评测是自证的。
-
-**License。** 允许再分发时附带数据；否则附下载脚本加来源卡片。
-
-从小处起步：先做 3–5 个高质量、人工核对的 pack，覆盖不同任务形态，以
-[`examples/algotune_knn`](https://github.com/RUC-NLPIR/Arbor/tree/main/examples/algotune_knn)
-作为参考，再扩展。质量封顶，不是数量封顶。
+- **扩充集合**到 3–5 个高质量、人工核对的 pack，覆盖不同任务形态，以 `algotune_knn` 为
+  参考。质量封顶，不是数量封顶。
+- **`arbor benchmark add`**——半自动转换：intake agent 从原始基准*起草*一个 Task Pack，
+  再由校验器和人工接受这一步把关（起草自动、接受需校验——绝不自动接受）。*实现* baseline 的
+  agent 与之后优化它的 loop 分开，使评测不自证。*（已设计；尚未实现。）*
+- **把一个 pack 降级成 [plugin](plugins.md)** 以实现一行改写重定向——front-matter 契约
+  复用 `plugin` 词汇（`eval_contract` / `protected_paths`），应能几乎无返工地导出（与 2.2
+  配套）。
 
 ### 2.2 插件库
 
