@@ -57,6 +57,7 @@ nav:
       - Outputs & Resume: outputs-and-resume.md
   - Reference:
       - CLI: cli.md
+  - Roadmap: roadmap.md
   - Contributing: contributing.md
 
 markdown_extensions:
@@ -116,6 +117,7 @@ plugins:
             Outputs & Resume: 输出与续跑
             Reference: 参考
             Contributing: 贡献
+            Roadmap: 路线图
 
 extra:
   social:
