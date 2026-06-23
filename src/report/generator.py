@@ -23,6 +23,13 @@ from typing import Any
 from ..events.subscribers.stats_collector import EventStats
 
 
+def format_score_with_split(score: float | None, split: str = "dev") -> str:
+    """Render a score tagged with the split it came from, e.g. ``45.2 (dev)``."""
+    if score is None:
+        return "—"
+    return f"{score:.1f} ({split})"
+
+
 def generate_report(
     session_dir: Path,
     *,
