@@ -30,3 +30,13 @@ def test_scaffold_zoo_renders_verify_rows(tmp_path: Path) -> None:
     assert (dest / "README.md").exists()
     assert (dest / "PROVENANCE.md").exists()
     assert "contract" in result.output  # a verify row name was rendered
+
+
+def test_scaffold_rejects_invalid_split_kind(tmp_path: Path) -> None:
+    dest = tmp_path / "demo"
+    result = runner.invoke(
+        benchmark_app,
+        ["scaffold", str(dest), "--name", "demo", "--split-kind", "paht"],
+    )
+    assert result.exit_code == 2
+    assert not dest.exists()  # bailed before writing anything

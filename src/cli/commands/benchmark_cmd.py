@@ -121,9 +121,15 @@ def scaffold_command(
     pack_name = name or target.name
     if split_kind == "path":
         splits = {"kind": "path", "dev": ["data/dev/**"], "test": ["data/test/**"]}
-    else:
+    elif split_kind == "seed_range":
         splits = {"kind": "seed_range", "dev": {"base": 1000, "count": 3},
                   "test": {"base": 9000, "count": 3}}
+    else:
+        typer.secho(
+            f"error: --split-kind must be 'seed_range' or 'path', got {split_kind!r}",
+            fg=typer.colors.RED, err=True,
+        )
+        raise typer.Exit(code=2)
     try:
         res = scaffold_benchmark(
             target, name=pack_name, metric_direction=direction, splits=splits,

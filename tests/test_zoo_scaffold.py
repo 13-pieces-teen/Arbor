@@ -45,8 +45,28 @@ def test_light_eval_template_prints_parseable_score(tmp_path: Path) -> None:
 def test_path_split_creates_data_dirs(tmp_path: Path) -> None:
     res = scaffold_benchmark(tmp_path, name="demo", metric_direction="minimize",
                              splits=_PATH_SPLITS, style="light")
-    assert "data/dev/.gitkeep" in res.created
-    assert "data/test/.gitkeep" in res.created
+    # Visible placeholders (not hidden .gitkeep) so path globs can match them.
+    assert "data/dev/example_001.txt" in res.created
+    assert "data/test/example_001.txt" in res.created
+
+
+def test_zoo_path_split_passes_structural_verify(tmp_path: Path) -> None:
+    # Regression: path-kind zoo packs must also pass splits-disjoint, which
+    # requires glob-matchable (non-dotfile) data instances on both sides.
+    scaffold_benchmark(tmp_path, name="demo", metric_direction="maximize",
+                       splits=_PATH_SPLITS, style="zoo")
+    results = verify_pack(tmp_path, run_eval=False)
+    fails = [r for r in results if r.status == "fail"]
+    assert not fails, f"path-kind structural verify failed: {[(r.name, r.message) for r in fails]}"
+
+
+def test_generated_eval_sh_uses_lf_line_endings(tmp_path: Path) -> None:
+    # Regression: a CRLF shebang ("…bash\r") is a broken interpreter on Unix.
+    scaffold_benchmark(tmp_path, name="demo", metric_direction="maximize",
+                       splits=_SEED_SPLITS, style="light", eval_entrypoint="eval.sh")
+    raw = (tmp_path / "eval.sh").read_bytes()
+    assert b"\r\n" not in raw
+    assert raw.split(b"\n", 1)[0] == b"#!/usr/bin/env bash"
 
 
 def test_zoo_scaffold_passes_structural_verify(tmp_path: Path) -> None:

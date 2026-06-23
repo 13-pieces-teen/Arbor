@@ -233,7 +233,9 @@ def scaffold_benchmark(
             res.skipped.append(rel)
             return
         p.parent.mkdir(parents=True, exist_ok=True)
-        p.write_text(content, encoding="utf-8")
+        # Force LF: a CRLF-translated eval.sh shebang ("…bash\r") is a broken
+        # interpreter on Unix, and the rest of the pack should stay LF too.
+        p.write_text(content, encoding="utf-8", newline="\n")
         res.created.append(rel)
 
     existing = find_eval_entrypoint(target)
@@ -245,8 +247,12 @@ def scaffold_benchmark(
         res.skipped.append(existing)
 
     if splits.get("kind") == "path":
-        write("data/dev/.gitkeep", "")
-        write("data/test/.gitkeep", "")
+        # Visible placeholder instances (not hidden .gitkeep): globs like
+        # `data/dev/**` skip dotfiles, so empty .gitkeep dirs would fail the
+        # splits-disjoint check. One example per split keeps the pack
+        # structurally verifiable; the user replaces them with real data.
+        write("data/dev/example_001.txt", "# replace with a real dev instance\n")
+        write("data/test/example_001.txt", "# replace with a real held-out test instance\n")
 
     write("solution.py", _SOLUTION)
 
