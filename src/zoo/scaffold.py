@@ -161,7 +161,7 @@ def _eval_py(splits: dict[str, Any]) -> str:
 
 
 def _readme(name: str, direction: str, splits: dict, baseline: dict,
-            edit: list[str], eval_cmd: str | None) -> str:
+            edit: list[str], eval_cmd: str | None, eval_entrypoint: str = "eval.py") -> str:
     fm: dict[str, Any] = {"name": name, "metric": {"direction": direction}}
     if eval_cmd:
         fm["eval"] = {"cmd": eval_cmd}
@@ -169,6 +169,12 @@ def _readme(name: str, direction: str, splits: dict, baseline: dict,
     fm["baseline"] = baseline
     fm["edit"] = edit
     front = yaml.safe_dump(fm, sort_keys=False, default_flow_style=False)
+    if eval_entrypoint == "eval.sh":
+        run = ("bash eval.sh dev    # iterate here\n"
+               "bash eval.sh test   # held-out gate\n")
+    else:
+        run = ("python eval.py --split dev    # iterate here\n"
+               "python eval.py --split test   # held-out gate\n")
     body = (
         f"# {name}\n\n"
         "One-line summary of the benchmark.\n\n"
@@ -177,8 +183,7 @@ def _readme(name: str, direction: str, splits: dict, baseline: dict,
         "off-limits (the eval harness and any ground-truth files).\n\n"
         "## Run the baseline\n"
         "```bash\n"
-        "python eval.py --split dev    # iterate here\n"
-        "python eval.py --split test   # held-out gate\n"
+        f"{run}"
         "```\n"
         "Each prints one `score: <float>` line.\n\n"
         "## Optimize with Arbor\n"
@@ -257,7 +262,8 @@ def scaffold_benchmark(
     write("solution.py", _SOLUTION)
 
     if style == "zoo":
-        write("README.md", _readme(name, metric_direction, splits, baseline, edit, eval_cmd))
+        write("README.md", _readme(name, metric_direction, splits, baseline, edit, eval_cmd,
+                                   eval_entrypoint))
         write("PROVENANCE.md", _PROVENANCE)
         write("requirements.txt", "# add runtime dependencies here\n")
         res.verify = verify_pack(target, run_eval=False)

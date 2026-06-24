@@ -105,7 +105,7 @@ def list_command(
 @benchmark_app.command("scaffold")
 def scaffold_command(
     target_dir: Path = typer.Argument(..., help="Directory to scaffold (created if missing)."),
-    name: str = typer.Option(None, "--name", help="Benchmark name (default: dir name)."),
+    name: str | None = typer.Option(None, "--name", help="Benchmark name (default: dir name)."),
     direction: str = typer.Option("maximize", "--direction", help="maximize | minimize."),
     style: str = typer.Option("light", "--style", help="light | zoo."),
     split_kind: str = typer.Option("seed_range", "--split-kind", help="seed_range | path."),

@@ -42,6 +42,19 @@ def test_light_eval_template_prints_parseable_score(tmp_path: Path) -> None:
     assert "score:" in proc.stdout
 
 
+def test_zoo_readme_run_commands_match_entrypoint(tmp_path: Path) -> None:
+    # eval.sh entrypoint → the README "Run the baseline" block uses bash eval.sh,
+    # not python eval.py.
+    scaffold_benchmark(tmp_path / "sh", name="demo", metric_direction="maximize",
+                       splits=_SEED_SPLITS, style="zoo", eval_entrypoint="eval.sh")
+    readme = (tmp_path / "sh" / "README.md").read_text()
+    assert "bash eval.sh dev" in readme and "python eval.py" not in readme
+    # eval.py entrypoint → python eval.py
+    scaffold_benchmark(tmp_path / "py", name="demo", metric_direction="maximize",
+                       splits=_SEED_SPLITS, style="zoo", eval_entrypoint="eval.py")
+    assert "python eval.py --split dev" in (tmp_path / "py" / "README.md").read_text()
+
+
 def test_path_split_creates_data_dirs(tmp_path: Path) -> None:
     res = scaffold_benchmark(tmp_path, name="demo", metric_direction="minimize",
                              splits=_PATH_SPLITS, style="light")
