@@ -157,13 +157,20 @@ def add_command(
         Path("arbor-zoo"), "--dest",
         help="Where to write the draft pack (default: ./arbor-zoo).",
     ),
+    do_bringup: bool = typer.Option(
+        False, "--bringup",
+        help="After scaffolding, run the bring-up agent to make the baseline run "
+             "(needs a configured LLM provider / API key).",
+    ),
+    max_turns: int = typer.Option(
+        40, "--max-turns", help="Agent turn budget for --bringup.",
+    ),
 ) -> None:
-    """Acquire a benchmark and scaffold a draft pack (deterministic spine).
+    """Acquire a benchmark and scaffold a draft pack; optionally run the bring-up agent.
 
-    Phase 1: selects an acquirer, clones/downloads into the global cache, scaffolds a
-    draft pack, and structurally verifies it. The agent-driven survey + baseline bring-up
-    are the next sub-phase — this leaves a draft for a human (or a later agent pass) to
-    complete, then `arbor benchmark verify` and accept.
+    The deterministic spine clones/downloads into the global cache and scaffolds a draft.
+    With ``--bringup`` (and a configured provider), an agent then makes the baseline run and
+    fills in the README + PROVENANCE. Drafting is automated; acceptance stays a human step.
     """
     if select_acquirer(spec) is None:
         typer.secho(
@@ -187,6 +194,30 @@ def add_command(
         typer.secho(f"\ndraft pack: {result.draft_pack_dir}", fg=typer.colors.GREEN)
     typer.echo(f"structural verify: {len(fails)} fail(s) "
                f"(eval not run — the draft eval is a stub)")
+
+    if do_bringup and result.draft_pack_dir:
+        import asyncio
+
+        from ...zoo import bringup, real_agent_runner
+
+        materials = result.acquired.materials_dir if result.acquired else None
+        typer.secho("\nbringing up the baseline (agent) …", fg=typer.colors.CYAN)
+        try:
+            br = asyncio.run(bringup(
+                result.draft_pack_dir, run_agent=real_agent_runner(),
+                materials_dir=materials, max_turns=max_turns,
+            ))
+        except Exception as exc:  # noqa: BLE001 — surface provider/setup errors clearly
+            typer.secho(f"  bring-up could not start: {exc}", fg=typer.colors.RED, err=True)
+            typer.echo("  (configure a provider with `arbor setup` / set your API key, then retry)")
+            raise typer.Exit(code=1) from exc
+        for note in br.notes:
+            typer.echo(f"  • {note}")
+        typer.secho(
+            f"  bring-up {'succeeded' if br.ok else 'incomplete'} "
+            f"(dev score: {br.dev_score})",
+            fg=typer.colors.GREEN if br.ok else typer.colors.YELLOW,
+        )
 
     typer.secho("\nstill to do (drafting is automated, acceptance is not):",
                 fg=typer.colors.YELLOW)
