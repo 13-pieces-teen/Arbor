@@ -1,78 +1,79 @@
 # 基准库 —— 格式参考
 
-这一页讲一个基准文件夹的确切格式,以及 `arbor benchmark verify` 检查什么。整体介绍见
+本页说明一个基准目录的格式,以及 `arbor benchmark verify` 的检查项。整体介绍见
 [总览](zoo-overview.md)。
 
-格式是**文档优先**的:一个基准就是一个文档齐全的文件夹。README 是 Arbor 在 intake 时读的自然语言
-说明——**没有要填的 YAML 清单**。
+本格式以文档为中心:一个基准即一个文档完备的目录。README 为 Arbor 在接入阶段读取的自然语言说明,
+无需填写 YAML 清单。
 
-## 一个基准文件夹包含什么
+## 目录组成
 
-每个 `arbor-zoo/<name>/` 里有四样东西:
+每个 `arbor-zoo/<name>/` 包含以下内容:
 
 | 文件 / 目录 | 作用 | 面向 |
 | --- | --- | --- |
-| `README.md` | 任务是什么、指标、Arbor 能改什么、dev/test 怎么分——用自然语言写。 | Arbor(和人) |
-| 基线代码 | 可编辑的基线——`solution.py`,或一整套文件。 | Arbor 编辑 |
-| `eval.sh` *或* `eval.py` | 受保护 eval 入口。`bash eval.sh dev\|test`(或 `python eval.py --split …`)打印一行 `score: <float>`。 | 受保护 |
-| `PROVENANCE.md` | 来源、环境、baseline 怎么实现、污染评估、注意事项。 | 人看 |
-| `data/`、`task.py`… | eval 需要的数据 / ground-truth(受保护)。 | — |
+| `README.md` | 任务说明:任务内容、指标、Arbor 可修改的范围、dev/test 的划分方式(自然语言)。 | Arbor(及人) |
+| 基线实现 | 可修改的基线 —— `solution.py`,或一组文件。 | Arbor 修改 |
+| `eval.sh` *或* `eval.py` | 受保护的评测入口。`bash eval.sh dev\|test`(或 `python eval.py --split …`)打印一行 `score: <float>`。 | 受保护 |
+| `PROVENANCE.md` | 来源、运行环境、基线说明、污染评估、注意事项。 | 人工查阅 |
+| `data/`、`task.py` 等 | 评测所需的数据 / 参考实现(受保护)。 | — |
 
-以 `_` 开头的文件夹(如 `_template`)是脚手架,会被跳过。
+以 `_` 开头的目录(如 `_template`)为脚手架,工具会自动跳过。
 
-### `README.md` —— 用大白话写清任务
+### `README.md` —— 任务说明
 
-README 就是 Arbor 用来理解任务的东西,跟它 intake 读任何 repo 一样。怎么读着顺就怎么写;一个基准
-通常写清四件事:
+README 是 Arbor 理解任务的依据,其读取方式与接入任意代码仓库时一致。无固定模板,一份说明通常包含
+以下四部分:
 
-1. **任务** —— 是什么、一个解长什么样。
-2. **指标** —— eval 打印什么(一行 `score:`)、越大还是越小好。
-3. **Arbor 能改什么** —— 基线文件;其余一切(eval、ground-truth、数据)不许碰。
-4. **dev / test** —— 两者怎么分,让留出集清楚(不相交的种子,或 `data/dev/` vs `data/test/`)。
+1. **任务** —— 任务内容,以及一个解的形态。
+2. **指标** —— 评测打印的内容(一行 `score:`),以及越大或越小为优。
+3. **可修改范围** —— 作为基线的文件;其余内容(评测脚本、参考实现、数据)均不可修改。
+4. **dev / test** —— 两者的划分方式,以明确留出集(不相交的随机种子,或 `data/dev/`、`data/test/`
+   两个目录)。
 
-格式里**没有固定的 baseline 数字**:同一份基线在不同硬件/模型上跑出来不一样,所以它写在 PROVENANCE
-里,而不是钉成一个值。
+格式中**不包含固定的基线分数**:同一基线在不同硬件 / 模型下分数不同,因此基线写入 PROVENANCE,而非
+固化为一个数值。
 
-### `PROVENANCE.md` —— 给人看的卡片
+### `PROVENANCE.md` —— 来源说明
 
-必含章节(校验器会查在不在):**Source**、**Setup & environment**、**Baseline**、
-**Contamination assessment**、**Caveats**。来源、license、baseline 怎么实现的(以及分数波动多大)、
-留出集的理由,都写在这里给维护者读。
+必含章节(校验器检查其是否存在):**Source**、**Setup & environment**、**Baseline**、
+**Contamination assessment**、**Caveats**。来源、许可证、基线的实现方式(及分数的波动范围)、留出集的
+说明等,均在此记录,供维护者审阅。
 
-## `arbor benchmark verify` 查什么
+## `arbor benchmark verify` 的检查项
 
-`verify` 是个轻量的**结构**检查——查齐全,不查正确性,也**不跑 eval**(baseline 分数本就不通用)。
-它查:
+`verify` 为轻量的**结构**检查,用于确认组成完整,而非正确性门禁,且**不运行评测**(基线分数并非通用
+数值)。它检查:
 
-- `README.md` 在、且非空;
-- `PROVENANCE.md` 在、且必含章节齐全;
-- eval 入口(`eval.sh` 或 `eval.py`)在。
+- `README.md` 存在且非空;
+- `PROVENANCE.md` 存在且必含章节齐全;
+- 评测入口(`eval.sh` 或 `eval.py`)存在。
 
 ```bash
-arbor benchmark verify arbor-zoo/<name>   # 缺东西就非零退出
-arbor benchmark list arbor-zoo            # 列出有哪些基准
+arbor benchmark verify arbor-zoo/<name>   # 缺少任一项即以非零码退出
+arbor benchmark list arbor-zoo            # 列出基准
 ```
 
-dev/test 是否*真的*留出、baseline 到底干了什么,写在 PROVENANCE 文字里、由人判断——不做机器强制。
+dev/test 是否真正留出、基线的实际行为等,记录于 PROVENANCE 并由人工判断,不做机器强制。
 
-## 用 Arbor 跑一个基准
+## 在基准上运行 Arbor
 
-Arbor 在仓库根的 git worktree 里跑实验,所以请在 Arbor 检出**之外**的副本里工作:
+Arbor 在仓库根目录的 git worktree 中运行实验,因此请在 Arbor 仓库**之外**的副本中操作:
 
 ```bash
 cp -r arbor-zoo/algotune_knn /tmp/algotune_knn
 cd /tmp/algotune_knn
 git init -q && git add -A && git commit -qm baseline
-arbor   # Arbor 读 README、确认任务,然后开始迭代
+arbor   # Arbor 读取 README、确认任务后开始迭代
 ```
 
 ## 新增一个基准
 
-1. 起架子:`arbor benchmark scaffold arbor-zoo/<name> --style zoo`。它写一个 eval 占位、
-   `solution.py` 占位、自然语言 `README.md` 和 `PROVENANCE.md`——但绝不替你写解法。
-2. 填好基线(`solution.py`)、eval(`eval.py`/`eval.sh`)、README(给 Arbor 看)、PROVENANCE(给人看)。
-3. 反复 `arbor benchmark verify arbor-zoo/<name>` 直到退出 0,再由维护者接受。起草可以自动,
-   **接受是人工这一步**。
+1. 生成脚手架:`arbor benchmark scaffold arbor-zoo/<name> --style zoo`。该命令写入评测占位、
+   `solution.py` 占位、自然语言 `README.md` 与 `PROVENANCE.md`,但不会生成解法本身。
+2. 补全基线(`solution.py`)、评测(`eval.py` / `eval.sh`)、README(供 Arbor)与 PROVENANCE(供人工)。
+3. 反复运行 `arbor benchmark verify arbor-zoo/<name>` 直至以 0 退出,再由维护者审核接受。起草可自动化,
+   **接受为人工环节**。
 
-端到端的例子见
+完整示例见
 [`arbor-zoo/algotune_knn`](https://github.com/RUC-NLPIR/Arbor/tree/main/arbor-zoo/algotune_knn)。

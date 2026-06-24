@@ -20,21 +20,22 @@ Each `arbor-zoo/<name>/` holds four things:
 
 Folders whose name starts with `_` (e.g. `_template`) are scaffolding and are skipped.
 
-### `README.md` — the task, in plain language
+### `README.md` — the task description
 
 The README is what Arbor reads to understand the task, the same way its intake reads any
-repo. Write it however reads best; a benchmark usually covers four things:
+repository. There is no fixed template; a description usually covers four things:
 
 1. **The task** — what it is and what a solution looks like.
 2. **The metric** — what the eval prints (one `score:` line) and whether higher or lower is
    better.
-3. **What Arbor may edit** — the baseline file(s); everything else (the eval harness,
-   ground-truth, data) is off-limits.
-4. **Dev / test** — how the two differ, so the held-out split is clear (disjoint seeds, or
+3. **What Arbor may edit** — the baseline file(s); everything else (the eval script,
+   reference implementation, data) is protected.
+4. **Dev / test** — how the two are split, so the held-out set is clear (disjoint seeds, or
    `data/dev/` vs `data/test/`).
 
-There is **no fixed baseline number** in the format: the same baseline gives different scores
-on different hardware/models, so it's described in PROVENANCE, not pinned as a value.
+The format contains **no fixed baseline number**: the same baseline gives different scores on
+different hardware/models, so the baseline is described in PROVENANCE rather than pinned as a
+value.
 
 ### `PROVENANCE.md` — the human card
 

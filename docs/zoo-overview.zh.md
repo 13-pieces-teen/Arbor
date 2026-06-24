@@ -1,48 +1,47 @@
 # 基准库（Benchmark Zoo）
 
-Arbor 的工作方式很简单:对着一个能打分的任务,反复改代码、跑评测、把让分数变好的改动留下来。
-**基准库**就是一批这样的任务的集合——每个都打包成统一格式,拿来就能直接让 Arbor 上手优化。它放在
-仓库的 [`arbor-zoo/`](https://github.com/RUC-NLPIR/Arbor/tree/main/arbor-zoo) 下,一个文件夹一个基准。
+Arbor 的工作流程是:针对一个可评分的任务,迭代地修改代码、运行评测,并保留能提升分数的改动。
+**基准库**是一组此类任务的集合,每个任务以统一格式打包,可直接交由 Arbor 优化。它位于仓库的
+[`arbor-zoo/`](https://github.com/RUC-NLPIR/Arbor/tree/main/arbor-zoo) 目录下,每个基准一个文件夹。
 
-## 它用来干什么
+## 主要用途
 
-- **现成的任务,直接刷。** 库里每个基准都自带评测和一份基线,`arbor` 对准它就能开始优化、刷分。
-- **把你自己的任务也变成这样。** 有代码、但还不能评测?一条命令补上评测的架子,Arbor 就能跑了。
-- **自动收集(开发中)。** 让 Arbor 自己去 GitHub / HuggingFace 上把一个 benchmark 拉下来,整理成
-  库里的格式。
+- **可直接运行的优化任务。** 每个基准自带评测脚本与基线实现,将 Arbor 指向它即可开始优化。
+- **接入你自己的任务。** 若你已有代码但缺少可运行的评测,一条命令即可补全评测脚手架。
+- **自动收集(开发中)。** 由 Arbor 从 GitHub / HuggingFace 获取一个 benchmark 并整理为本格式。
 
-## 一个基准长什么样
+## 基准的组成
 
-就是一个文件夹,里面三样东西:
+每个基准是一个目录,包含以下部分:
 
-- 一份 **README**:这个任务是什么、要优化哪个分数;
-- 一份 **基线代码**:Arbor 的优化起点,也是它唯一能改的部分;
-- 一个 **评测脚本**:跑一下打印一行 `score:`;它受保护,Arbor 改不了它、也就没法作弊。
+- **README** —— 任务说明:任务内容、优化的指标、Arbor 可修改的范围。供 Arbor 在接入阶段读取。
+- **基线实现** —— 优化的起点,也是 Arbor 唯一可修改的部分(如 `solution.py`)。
+- **评测脚本** —— 运行后打印一行 `score:`;该脚本受保护,Arbor 不可修改。
 
-Arbor 做的事就是一个循环:改基线 → 跑评测 → 分数涨了就留下,如此反复。
+Arbor 的迭代循环为:修改基线 → 运行评测 → 若分数提升则保留,循环往复。
 
-## 几个入口
+## 使用入口
 
-| 你想做什么 | 命令 |
+| 用途 | 命令 |
 | --- | --- |
-| 看库里有哪些基准 | `arbor benchmark list` |
-| 在某个基准上跑 Arbor 优化 | 把它拷出仓库,`git init`,在目录里跑 `arbor` |
-| 检查一个基准合不合格 | `arbor benchmark verify <目录>` |
-| 把你自己的代码补成 Arbor 能跑的 | `arbor benchmark scaffold <目录>` |
-| 从 GitHub / HF 拉一个 benchmark 进来 | `arbor benchmark add <地址> --name <名字>` |
+| 列出库中的基准 | `arbor benchmark list` |
+| 在某个基准上运行 Arbor | 将其拷出仓库,`git init` 后在目录内运行 `arbor` |
+| 校验一个基准的结构 | `arbor benchmark verify <目录>` |
+| 将你的代码补全为可运行的基准 | `arbor benchmark scaffold <目录>` |
+| 从 GitHub / HF 获取一个 benchmark | `arbor benchmark add <地址> --name <名称>` |
 
-完整跑一个的例子:
+运行示例:
 
 ```bash
 cp -r arbor-zoo/algotune_knn /tmp/algotune_knn   # 拷出 Arbor 仓库
 cd /tmp/algotune_knn && git init -q && git add -A && git commit -qm baseline
-arbor                                             # 确认任务,然后它开始迭代
+arbor                                             # 确认任务后开始迭代
 ```
 
-## 现在有什么、还在做什么
+## 进展
 
-- ✅ **已经能用:** 基准格式、校验(`verify`)、列表(`list`)、补脚手架(`scaffold`)、收集的主体
-  (`add`),以及第一个示例基准 `algotune_knn`。
-- ⏳ **还在做:** 让 `add` 更聪明(自动调研 benchmark、把基线跑通),以及加入更多基准。
+- **已支持:** 基准格式、校验(`verify`)、列表(`list`)、脚手架(`scaffold`)、收集主体(`add`),
+  以及首个示例基准 `algotune_knn`。
+- **进行中:** 增强 `add`(自动调研 benchmark 并跑通基线),以及补充更多基准。
 
-想自己写一个基准,详细格式见[格式参考](zoo.md);整条线的规划见[路线图](roadmap.md)。
+撰写一个基准的详细格式见[格式参考](zoo.md);整体规划见[路线图](roadmap.md)。
