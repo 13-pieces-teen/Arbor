@@ -1,32 +1,25 @@
-"""Pack discovery + the README front-matter *contract* for the ``arbor-zoo`` format.
+"""Pack discovery for the ``arbor-zoo`` benchmark format.
 
 A *benchmark* is a directory under ``arbor-zoo/`` holding a self-contained task:
-a ``README.md`` whose YAML **front-matter** is a tiny machine-readable contract and
-whose body is human/agent prose, a ``PROVENANCE.md`` card, a runnable **baseline**
-(one or more code files), and a protected eval entrypoint (``eval.sh``/``eval.py``)
-that prints one ``score: <float>`` line for ``dev`` and ``test``.
+a natural-language ``README.md`` (what the task is, which score to optimize, what
+Arbor may edit — read by Arbor at intake), a ``PROVENANCE.md`` card for humans, a
+runnable **baseline** (one or more code files), and a protected eval entrypoint
+(``eval.sh``/``eval.py``) that prints one ``score: <float>`` line.
 
-There is no separate manifest file. The few facts a verifier and an unattended
-harness genuinely need — and which prose cannot be checked against — live in the
-README front-matter (metric direction, dev/test split, expected baseline, editable
-surface). Everything human (setup, license, baseline write-up, contamination) lives
-in prose in the README body and ``PROVENANCE.md``. See ``docs/zoo.md``.
+The format is **documentation-first**: there is no machine manifest. Discovery and
+verification work by convention — see :mod:`arbor.zoo.verify` and ``docs/zoo.md``.
 """
 
 from __future__ import annotations
 
 import logging
-import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
 
 log = logging.getLogger(__name__)
 
 # Eval entrypoints recognised by convention, in preference order.
 EVAL_ENTRYPOINTS = ("eval.sh", "eval.py")
-
-_FRONT_MATTER_RE = re.compile(r"^---\s*\n(.*?)\n---\s*\n?(.*)$", re.DOTALL)
 
 
 @dataclass(frozen=True)
@@ -36,60 +29,6 @@ class PackSummary:
     name: str
     description: str
     path: str
-
-
-@dataclass
-class Contract:
-    """The README front-matter contract. Every field defaults empty so a partial
-    contract still loads; the verifier decides whether an omission is fatal."""
-
-    name: str = ""
-    metric: dict[str, Any] = field(default_factory=dict)    # {direction}
-    eval: dict[str, Any] = field(default_factory=dict)      # {cmd}  (optional; convention otherwise)
-    splits: dict[str, Any] = field(default_factory=dict)    # {kind, dev, test}
-    baseline: dict[str, Any] = field(default_factory=dict)  # {score, tolerance, kind}
-    edit: list[str] = field(default_factory=list)           # editable globs (1+); rest is protected
-    frozen: dict[str, Any] = field(default_factory=dict)    # {model, budget} — the freeze axis (optional)
-    present: bool = False                                    # was there front-matter at all?
-
-
-def read_front_matter(md_path: Path) -> tuple[dict[str, Any] | None, str]:
-    """Split *md_path* into (front-matter dict | None, body).
-
-    Front-matter is a leading ``---``-fenced YAML block. Returns ``(None, full_text)``
-    when there is none.
-    """
-    if not md_path.exists():
-        return None, ""
-    text = md_path.read_text(encoding="utf-8")
-    m = _FRONT_MATTER_RE.match(text)
-    if not m:
-        return None, text
-    try:
-        import yaml
-        data = yaml.safe_load(m.group(1))
-    except ImportError:
-        raise ImportError("PyYAML is required to read pack front-matter")
-    if not isinstance(data, dict):
-        return None, text
-    return data, m.group(2)
-
-
-def load_contract(pack_dir: Path) -> Contract:
-    """Parse the README front-matter contract for *pack_dir* (empty if absent)."""
-    data, _ = read_front_matter(pack_dir / "README.md")
-    if data is None:
-        return Contract()
-    return Contract(
-        name=data.get("name", pack_dir.name),
-        metric=data.get("metric", {}) or {},
-        eval=data.get("eval", {}) or {},
-        splits=data.get("splits", {}) or {},
-        baseline=data.get("baseline", {}) or {},
-        edit=data.get("edit", []) or [],
-        frozen=data.get("frozen", {}) or {},
-        present=True,
-    )
 
 
 def find_eval_entrypoint(pack_dir: Path) -> str | None:
@@ -109,9 +48,21 @@ def is_pack_dir(path: Path) -> bool:
 
 
 def _readme_description(pack_dir: Path) -> str:
-    """First non-heading, non-blank line of the README body — a one-line description."""
-    _, body = read_front_matter(pack_dir / "README.md")
-    for line in body.splitlines():
+    """First non-heading, non-blank line of the README — a one-line description.
+
+    Tolerates (and skips) a legacy leading ``---``-fenced block if one is present.
+    """
+    readme = pack_dir / "README.md"
+    if not readme.exists():
+        return "(no description)"
+    lines = readme.read_text(encoding="utf-8").splitlines()
+    i = 0
+    if lines and lines[0].strip() == "---":
+        for j in range(1, len(lines)):
+            if lines[j].strip() == "---":
+                i = j + 1
+                break
+    for line in lines[i:]:
         stripped = line.strip()
         if stripped and not stripped.startswith("#"):
             return stripped

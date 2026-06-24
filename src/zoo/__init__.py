@@ -1,10 +1,10 @@
 """``arbor.zoo`` — the benchmark format, its verifier, scaffolder, and collection spine.
 
-A benchmark is a self-contained directory under ``arbor-zoo/``: a README whose YAML
-front-matter is a tiny machine contract and whose body is prose, a PROVENANCE card, a
-runnable baseline (one or more code files), and a protected eval entrypoint. This package
-provides pack discovery + the contract (:mod:`~arbor.zoo.pack`), the
-``arbor benchmark verify`` gate (:mod:`~arbor.zoo.verify`), the scaffolder
+A benchmark is a self-contained directory under ``arbor-zoo/``: a natural-language README
+(the task description Arbor reads), a PROVENANCE card for humans, a runnable baseline (one
+or more code files), and a protected eval entrypoint. The format is documentation-first —
+no machine manifest. This package provides pack discovery (:mod:`~arbor.zoo.pack`), the
+``arbor benchmark verify`` lint (:mod:`~arbor.zoo.verify`), the scaffolder
 (:mod:`~arbor.zoo.scaffold`), and the ``arbor benchmark add`` collection spine
 (:mod:`~arbor.zoo.acquire` / :mod:`~arbor.zoo.cache` / :mod:`~arbor.zoo.collect`).
 See ``docs/zoo.md``.
@@ -17,13 +17,10 @@ from .cache import Manifest, benchmark_cache_dir, cache_root
 from .collect import CollectResult, collect
 from .pack import (
     EVAL_ENTRYPOINTS,
-    Contract,
     PackSummary,
     discover_packs,
     find_eval_entrypoint,
     is_pack_dir,
-    load_contract,
-    read_front_matter,
 )
 from .scaffold import ScaffoldResult, scaffold_benchmark
 from .verify import VerifyResult, verify_pack
@@ -33,7 +30,6 @@ __all__ = [
     "Acquired",
     "Acquirer",
     "CollectResult",
-    "Contract",
     "GitRepoAcquirer",
     "Manifest",
     "PackSummary",
@@ -46,8 +42,6 @@ __all__ = [
     "discover_packs",
     "find_eval_entrypoint",
     "is_pack_dir",
-    "load_contract",
-    "read_front_matter",
     "scaffold_benchmark",
     "select_acquirer",
     "verify_pack",

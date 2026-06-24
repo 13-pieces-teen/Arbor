@@ -29,7 +29,7 @@ def test_scaffold_zoo_renders_verify_rows(tmp_path: Path) -> None:
     assert result.exit_code == 0, result.output
     assert (dest / "README.md").exists()
     assert (dest / "PROVENANCE.md").exists()
-    assert "contract" in result.output  # a verify row name was rendered
+    assert "provenance" in result.output  # a verify row name was rendered
 
 
 def test_scaffold_rejects_invalid_split_kind(tmp_path: Path) -> None:

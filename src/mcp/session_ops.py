@@ -331,13 +331,11 @@ def scaffold_benchmark(
     cwd: str | Path,
     *,
     name: str,
-    metric_direction: str,
-    splits: dict[str, Any],
-    baseline: dict[str, Any] | None = None,
-    edit: list[str] | None = None,
-    eval_cmd: str | None = None,
+    metric_direction: str = "maximize",
     style: str = "light",
+    split_kind: str = "seed_range",
     eval_entrypoint: str = "eval.py",
+    edit: list[str] | None = None,
     git_init: bool = False,
 ) -> dict[str, Any]:
     """Create the Arbor reference folder under *cwd*; optionally git-init it.
@@ -350,9 +348,8 @@ def scaffold_benchmark(
 
     target = Path(cwd)
     res = _scaffold(
-        target, name=name, metric_direction=metric_direction, splits=splits,
-        baseline=baseline, edit=edit, eval_cmd=eval_cmd, style=style,
-        eval_entrypoint=eval_entrypoint,
+        target, name=name, metric_direction=metric_direction, style=style,
+        split_kind=split_kind, eval_entrypoint=eval_entrypoint, edit=edit,
     )
     committed = False
     if git_init and not (target / ".git").exists():

@@ -9,14 +9,12 @@ Full format spec and the verifier's check list live in the docs:
 
 ## Format in one line
 
-Each `arbor-zoo/<name>/` folder is one benchmark: a **README.md** (a small YAML
-front-matter contract — metric, dev/test split, baseline, edit surface — plus a prose
-body: task, metric, how to run & optimize), a **PROVENANCE.md** card (setup &
-environment, baseline implementation, baseline reproduction, source, license,
-contamination, caveats), a runnable **baseline** (one or more code files), and a
-protected **eval entrypoint** (`eval.sh` or `eval.py`) that prints one `score: <float>`
-line for `dev` and `test`. The contract lives in the README front-matter — there is no
-separate manifest file.
+Each `arbor-zoo/<name>/` folder is one benchmark: a **README.md** (a plain-language
+description Arbor reads — the task, the metric, what it may edit, how dev/test differ), a
+**PROVENANCE.md** card for humans (source, setup, how the baseline works, contamination,
+caveats), a runnable **baseline** (one or more code files), and a protected **eval
+entrypoint** (`eval.sh` or `eval.py`) that prints one `score: <float>` line for `dev` and
+`test`. The format is documentation-first — there is no machine manifest.
 
 ## Packs
 

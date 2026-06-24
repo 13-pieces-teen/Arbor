@@ -6,17 +6,16 @@ correctness gate, and print exactly one machine-readable line:
     score: <float>
 
 A candidate that fails correctness should still print a score (e.g. `score: 0.0`)
-so the metric is always parseable. dev and test MUST use disjoint data — declare the
-split in the README front-matter (`splits:`) so the verifier can prove disjointness, and
-keep these constants in sync with it.
+so the metric is always parseable. dev and test MUST use disjoint data — describe the
+split in the README and PROVENANCE so a reviewer can confirm it's truly held out.
 """
 
 from __future__ import annotations
 
 import argparse
 
-# The held-out split. Keep in sync with `splits:` in the README front-matter — the
-# verifier proves disjointness against that declaration.
+# The held-out split. Describe it in the README (Dev / test) and PROVENANCE so a
+# reviewer can confirm dev and test never overlap.
 DEV_SEED_BASE = 1000
 TEST_SEED_BASE = 9000
 N_INSTANCES = 3

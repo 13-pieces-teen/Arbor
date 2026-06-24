@@ -140,28 +140,26 @@ def build_server() -> Any:
     @server.tool()
     def scaffold_benchmark(
         name: str,
-        metric_direction: str,
-        splits: dict[str, Any],
-        baseline: dict[str, Any] | None = None,
-        edit: list[str] | None = None,
-        eval_cmd: str | None = None,
+        metric_direction: str = "maximize",
         style: str = "light",
+        split_kind: str = "seed_range",
         eval_entrypoint: str = "eval.py",
+        edit: list[str] | None = None,
         git_init: bool = False,
         cwd: str | None = None,
     ) -> dict[str, Any]:
         """Create the Arbor-ready reference folder in cwd.
 
         style: light (runnable eval + dev/test split + editable solution.py) |
-        zoo (adds the README front-matter contract + PROVENANCE.md and runs the
-        structural verifier). Writes measurement plumbing only — never the
-        solution. Idempotent: existing files are reported as skipped. Takes no
-        run_name: scaffolding precedes a session, so it operates on a directory.
+        zoo (adds a natural-language README + PROVENANCE.md and runs the structural
+        verifier). Writes measurement plumbing only — never the solution.
+        Idempotent: existing files are reported as skipped. Takes no run_name:
+        scaffolding precedes a session, so it operates on a directory.
         """
         return ops.scaffold_benchmark(
-            _cwd(cwd), name=name, metric_direction=metric_direction, splits=splits,
-            baseline=baseline, edit=edit, eval_cmd=eval_cmd, style=style,
-            eval_entrypoint=eval_entrypoint, git_init=git_init,
+            _cwd(cwd), name=name, metric_direction=metric_direction, style=style,
+            split_kind=split_kind, eval_entrypoint=eval_entrypoint, edit=edit,
+            git_init=git_init,
         )
 
     # ── Evaluation ───────────────────────────────────────────────────────────

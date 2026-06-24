@@ -37,7 +37,7 @@ class CollectResult:
     def pending(self) -> list[str]:
         """Human/agent steps still required before the pack can be accepted."""
         return [
-            "Stage 0 survey: confirm canonical source, general baseline, angle + frozen substrate",
+            "Stage 0 survey: confirm the canonical source, the general baseline, and what Arbor edits",
             "Stage 2 bring-up: make the harvested baseline run; real eval.sh prints score: on dev/test",
             "Fill PROVENANCE (baseline implementation + contamination) and README sections",
             "Re-run `arbor benchmark verify` until green, then human-accept into arbor-zoo/",
@@ -79,18 +79,12 @@ def collect(
 
     # ── Stage 3: scaffold the draft pack (reuses the zoo scaffolder) ─────────
     draft_dir = dest_root / name
-    scaffold_res = scaffold_benchmark(
-        draft_dir, name=name, metric_direction="maximize",
-        splits={"kind": "seed_range",
-                "dev": {"base": 1000, "count": 3},
-                "test": {"base": 9000, "count": 3}},
-        style="zoo",
-    )
+    scaffold_res = scaffold_benchmark(draft_dir, name=name, style="zoo")
     result.draft_pack_dir = draft_dir
     result.notes.append(
         f"scaffolded draft pack at {draft_dir} ({len(scaffold_res.created)} files)")
 
-    # ── Stage 4 (structural): the zoo scaffolder already ran verify(run_eval=False) ──
+    # ── Stage 4 (structural): the zoo scaffolder already ran the verify lint ──
     result.verify_results = scaffold_res.verify
     result.ok = True
     return result

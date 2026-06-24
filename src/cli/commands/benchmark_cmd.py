@@ -2,8 +2,8 @@
 
 Subcommands:
 
-* ``arbor benchmark verify <pack-dir>`` — run the gate that decides whether a pack
-  is allowed into the zoo. Exits non-zero if any check fails.
+* ``arbor benchmark verify <pack-dir>`` — structurally check a benchmark folder
+  (README + PROVENANCE + eval entrypoint present). Does not run the eval.
 * ``arbor benchmark list [zoo-dir]`` — print a plain index of packs (not a ranked
   leaderboard).
 * ``arbor benchmark scaffold <dir>`` — write the measurement plumbing (light) or a
@@ -17,7 +17,6 @@ from __future__ import annotations
 
 import subprocess
 from pathlib import Path
-from typing import Any
 
 import typer
 
@@ -25,7 +24,6 @@ from ...zoo import (
     VerifyResult,
     collect,
     discover_packs,
-    find_eval_entrypoint,
     select_acquirer,
     verify_pack,
 )
@@ -56,44 +54,26 @@ def verify_command(
         ...,
         help="Path to the benchmark directory (with README.md + eval.sh/eval.py).",
     ),
-    no_eval: bool = typer.Option(
-        False, "--no-eval",
-        help="Skip the eval-running checks (structural validation only).",
-    ),
-    timeout: int = typer.Option(
-        600, "--timeout",
-        help="Per-eval timeout in seconds.",
-    ),
 ) -> None:
-    """Verify a Task Pack against the zoo format. Exits 1 if any check fails."""
+    """Structurally verify a benchmark folder (does not run the eval). Exits 1 on failure."""
     target = pack_dir.resolve()
     if not target.is_dir():
         typer.secho(f"error: not a directory: {target}", fg=typer.colors.RED, err=True)
         raise typer.Exit(code=2)
-    if not (target / "README.md").exists() or find_eval_entrypoint(target) is None:
-        typer.secho(
-            f"error: {target} is not a benchmark (needs README.md + eval.sh/eval.py)",
-            fg=typer.colors.RED, err=True,
-        )
-        raise typer.Exit(code=2)
 
     typer.echo(f"verifying {target.name} …")
-    results = verify_pack(target, run_eval=not no_eval, timeout=timeout)
+    results = verify_pack(target)
     for r in results:
         _render(r)
 
     fails = [r for r in results if r.status == "fail"]
-    warns = [r for r in results if r.status == "warn"]
     if fails:
         typer.secho(
-            f"\n{len(fails)} check(s) failed — pack does NOT enter the zoo.",
+            f"\n{len(fails)} check(s) failed — see the hints above.",
             fg=typer.colors.RED, err=True,
         )
         raise typer.Exit(code=1)
-    typer.secho(
-        f"\nall checks passed ({len(warns)} advisory warning(s) — human review still required).",
-        fg=typer.colors.GREEN,
-    )
+    typer.secho("\nlooks good — all structural checks pass.", fg=typer.colors.GREEN)
 
 
 @benchmark_app.command("list")
@@ -123,7 +103,6 @@ def scaffold_command(
     style: str = typer.Option("light", "--style", help="light | zoo."),
     split_kind: str = typer.Option("seed_range", "--split-kind", help="seed_range | path."),
     entrypoint: str = typer.Option("eval.py", "--entrypoint", help="eval.py | eval.sh."),
-    baseline: float = typer.Option(0.0, "--baseline", help="Declared baseline score (zoo)."),
     edit: list[str] = typer.Option(["solution.py"], "--edit", help="Editable file/glob (repeatable)."),
     git_init: bool = typer.Option(False, "--git-init", help="git init + baseline commit."),
 ) -> None:
@@ -132,23 +111,10 @@ def scaffold_command(
 
     target = target_dir.resolve()
     pack_name = name or target.name
-    splits: dict[str, Any]
-    if split_kind == "path":
-        splits = {"kind": "path", "dev": ["data/dev/**"], "test": ["data/test/**"]}
-    elif split_kind == "seed_range":
-        splits = {"kind": "seed_range", "dev": {"base": 1000, "count": 3},
-                  "test": {"base": 9000, "count": 3}}
-    else:
-        typer.secho(
-            f"error: --split-kind must be 'seed_range' or 'path', got {split_kind!r}",
-            fg=typer.colors.RED, err=True,
-        )
-        raise typer.Exit(code=2)
     try:
         res = scaffold_benchmark(
-            target, name=pack_name, metric_direction=direction, splits=splits,
-            baseline={"score": baseline, "tolerance": 0.0, "kind": "exact"},
-            edit=edit, style=style, eval_entrypoint=entrypoint,
+            target, name=pack_name, metric_direction=direction, style=style,
+            split_kind=split_kind, eval_entrypoint=entrypoint, edit=edit,
         )
     except ValueError as exc:
         typer.secho(f"error: {exc}", fg=typer.colors.RED, err=True)

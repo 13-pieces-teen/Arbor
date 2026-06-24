@@ -1,64 +1,34 @@
----
-name: TODO_pack_name
-metric:
-  direction: maximize          # maximize | minimize
-eval:
-  cmd: "bash eval.sh"          # optional; omit to use the eval.sh/eval.py convention.
-                               # the verifier appends `dev` / `test`
-splits:                        # how dev/test differ — lets the verifier prove they're disjoint
-  kind: seed_range             # seed_range | path
-  dev:  { base: 1000, count: 3 }
-  test: { base: 9000, count: 3 }
-  # path example:
-  #   kind: path
-  #   dev:  ["data/dev/**"]
-  #   test: ["data/test/**"]
-baseline:
-  score: 0.0                   # what `eval dev` prints today (verifier checks reality matches)
-  tolerance: 0.0               # relative margin for reproduce + determinism
-  kind: exact                  # exact | timing  (timing uses a ratio tolerance)
-edit: [solution.py]            # the editable surface (1+ files/globs); everything else is protected
-# frozen:                      # OPTIONAL — the freeze axis (what's held fixed for comparability)
-#   model: gpt-x               #   freeze the model (edit = scaffold/prompt), OR
-#   budget: "wall-clock 1h"    #   freeze only a budget (edit spans training+scaffold)
----
-
 # TODO_pack_name
 
-One-line summary of the benchmark. Fill in the front-matter above (the machine contract)
-and the four sections below — the verifier checks both, and they are what users and Arbor
-read.
+One-line summary of the benchmark — this first line shows up in `arbor benchmark list`.
 
-## Task & metric
+This README is what **Arbor reads** at intake to understand the task. Write it in plain
+language; there is no rigid format. Cover the four things below.
 
-What is the task, what does a solution look like, what number is optimized, and which
-direction is better (maximize / minimize)? Name the **edit surface** — the baseline
-code Arbor may change (one file like `solution.py`, or a whole set of files / a
-directory) — and what is off-limits (the eval harness and any ground-truth files).
+## The task
 
-## Run the baseline
+What the task is and what a solution looks like.
 
-The exact commands and the score the shipped baseline prints. The eval entrypoint is
-`eval.sh` (or `eval.py`), invoked with a split:
+## Metric
 
-```bash
-bash eval.sh dev     # iterate here
-bash eval.sh test    # held-out gate
-```
+What `eval.sh` / `eval.py` prints (one `score:` line) and whether **higher or lower** is
+better.
 
-Point to [`PROVENANCE.md`](PROVENANCE.md) → Setup & environment for install / hardware
-/ keys.
+## What Arbor may edit
 
-## Optimize with Arbor
+Which file(s) are the editable baseline (e.g. `solution.py`), and what's off-limits (the
+eval harness and any ground-truth / data).
 
-How to point Arbor at this benchmark (copy it out of the Arbor checkout first, it uses
-git worktrees) and the suggested research contract — metric, dev/test discipline, what
-may and may not be edited.
+## Dev / test
 
-## Provenance
+How dev and test differ, so the held-out split is clear — disjoint seeds, or separate
+`data/dev/` and `data/test/` folders.
 
-See [`PROVENANCE.md`](PROVENANCE.md). Verify the benchmark with:
+## Run it
 
 ```bash
-arbor benchmark verify arbor-zoo/<name>
+python eval.py --split dev    # iterate here
+python eval.py --split test   # held-out gate
 ```
+
+See [`PROVENANCE.md`](PROVENANCE.md) for source, setup, and the baseline write-up.

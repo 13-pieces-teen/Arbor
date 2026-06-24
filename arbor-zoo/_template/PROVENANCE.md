@@ -1,42 +1,29 @@
 # Provenance — TODO_pack_name
 
-All seven headings below are required. The verifier checks they are present; a maintainer
-reads and accepts the content before the benchmark ships. The README front-matter holds
-the machine facts (metric, splits, baseline, edit surface); this card holds the human
-trust + setup story.
+This card is for humans. Fill in every section; a maintainer reads it before the benchmark
+is accepted. (`arbor benchmark verify` checks these headings are present.)
 
 ## Source
 
-Where the benchmark comes from — the paper, repo, or competition, with a link, and how
-the data was collected or generated.
+Where the benchmark comes from — paper, repo, or competition, with a link, and how the data
+was collected or generated.
 
 ## Setup & environment
 
-Hardware (CPU / GPU), Python version, install command, env vars the eval expects, and any
-API keys, downloads, or services the user must provision. State whether it is offline.
+Hardware (CPU / GPU), Python version, install command, env vars, and any API keys, downloads,
+or services the user must provision. State whether it's offline. License of the code and data,
+and whether the data may be redistributed.
 
-## Data source & license
+## Baseline
 
-Where the data comes from, its license, and whether it may be redistributed. If it may not
-be bundled, ship `data/download.sh` instead of the data.
-
-## Baseline implementation
-
-**How the shipped baseline works** — the algorithm/approach, why it scores what it does,
-and what headroom it deliberately leaves for Arbor.
-
-## Baseline reproduction
-
-The number `eval dev` prints today (this must match `baseline.score` in the front-matter)
-and any gap from the published number.
+How the shipped baseline works and what score it tends to produce. **Results vary** by user,
+hardware, and (for API tasks) model — note the range you saw rather than a single fixed number.
 
 ## Contamination assessment
 
-**Mandatory.** Could the test split already be in a model's pre-training data? Is the
-held-out split truly disjoint from dev? Explain why a high score reflects real capability
-and not memorisation.
+**Mandatory.** Could the test split be in a model's pre-training data? Is the held-out split
+truly disjoint from dev? Explain why a high score reflects real capability.
 
 ## Caveats
 
-Known limitations — hardware sensitivity, metric noise, scope, anything a user should know
-before trusting the number.
+Known limitations — hardware sensitivity, metric noise, scope.
