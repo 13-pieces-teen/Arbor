@@ -105,6 +105,21 @@ def test_stable_base_unchanged_outside_linked_worktree(tmp_path: Path) -> None:
     assert ops._stable_arbor_base(tmp_path) == tmp_path.resolve()
 
 
+def test_stable_base_redirects_from_linked_worktree(tmp_path: Path) -> None:
+    """Inside a linked git worktree, ``.arbor`` anchors at the MAIN worktree root
+    so a file-backed session doesn't vanish when the agent switches worktrees."""
+    if not _git_worktree_works(tmp_path / "_probe"):
+        pytest.skip("git worktree not functional in this environment")
+    repo = _init_repo(tmp_path)
+    ops.tree_add_node(repo, "r", "ROOT", "idea")
+    res = ops.worktree_create(repo, "r", "1", branch="exp/wt")
+    wt = Path(res["worktree"])
+    assert wt.resolve() != repo.resolve()                 # genuinely a linked worktree
+    assert ops._stable_arbor_base(wt) == repo.resolve()   # redirected to the main root
+    # …and the main checkout itself is still left unchanged.
+    assert ops._stable_arbor_base(repo) == repo.resolve()
+
+
 def test_prune_marks_subtree(tmp_path: Path) -> None:
     ops.tree_add_node(tmp_path, "r", "ROOT", "idea")
     ops.tree_add_node(tmp_path, "r", "1", "child")

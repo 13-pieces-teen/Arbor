@@ -109,8 +109,12 @@ def _stable_arbor_base(cwd: str | Path) -> Path:
         main_root = common_path.parent.resolve()
         toplevel = Path(top).resolve()
         # Redirect only when we are inside a *linked* worktree (toplevel differs
-        # from the main worktree root); otherwise keep the caller's directory.
-        if main_root != toplevel and main_root.exists():
+        # from the main worktree root); otherwise keep the caller's directory. A
+        # real main worktree root has a ``.git`` entry (dir or file). Inside a git
+        # submodule, ``--git-common-dir`` points at the parent repo's
+        # ``.git/modules/<name>`` whose parent is ``.git/modules`` — not a
+        # worktree — so the ``.git`` check keeps us from anchoring there.
+        if main_root != toplevel and (main_root / ".git").exists():
             return main_root
     except Exception:  # pragma: no cover - git absent / unexpected layout
         return base
