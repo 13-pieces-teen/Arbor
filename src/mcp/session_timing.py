@@ -12,11 +12,19 @@ pipeline phase, and the recent-activity feed.
 
 It is best-effort telemetry: every write is wrapped so a sidecar failure can
 never break the real tree mutation that triggered it.
+
+It assumes a *single writer* per session — the keyless MCP path is single-agent —
+so the read-modify-write in :func:`record_event` is not locked; truly concurrent
+writers could drop one another's events. The atomic rename in :func:`_save` (write
+to a per-writer temp file, then ``replace``) still guarantees a reader never sees a
+half-written file even under concurrency.
 """
 
 from __future__ import annotations
 
 import json
+import os
+import threading
 import time
 from pathlib import Path
 from typing import Any
@@ -49,9 +57,16 @@ def load(coord_dir: str | Path) -> dict[str, Any]:
 def _save(coord_dir: str | Path, data: dict[str, Any]) -> None:
     path = _path(coord_dir)
     path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_suffix(path.suffix + ".tmp")
-    tmp.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
-    tmp.replace(path)
+    # A per-writer temp name (pid + thread) so two concurrent _save calls can't
+    # clobber a shared temp file mid-write; the rename onto the final path stays
+    # atomic. (record_event's read-modify-write still assumes a single writer.)
+    tmp = path.with_suffix(f"{path.suffix}.{os.getpid()}.{threading.get_ident()}.tmp")
+    try:
+        tmp.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+        tmp.replace(path)
+    except Exception:
+        tmp.unlink(missing_ok=True)  # don't leave a stray temp file behind
+        raise
 
 
 def record_event(
