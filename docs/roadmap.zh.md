@@ -97,9 +97,11 @@
 
 - **扩充集合**到 3–5 个高质量、人工核对的 pack，覆盖不同任务形态，以 `algotune_knn` 为
   参考。质量封顶，不是数量封顶。
-- **`arbor benchmark add`**——半自动转换：intake agent 从原始基准*起草*一个 Task Pack，
-  再由校验器和人工接受这一步把关（起草自动、接受需校验——绝不自动接受）。*实现* baseline 的
-  agent 与之后优化它的 loop 分开，使评测不自证。*（已设计；尚未实现。）*
+- **`arbor benchmark add`**——半自动转换:从一句话需求出发,agent 找到数据集,在交互终端里
+  询问用户**用哪个数据集、baseline 从哪来**(收割现成的 / 按你描述的方法实现 / 上网找),并产出
+  一个可运行草稿,再由校验器和人工接受这一步把关(起草自动、接受需校验——绝不自动接受)。*实现*
+  baseline 的 agent 与之后优化它的 loop 分开,使评测不自证。*(已实现:discovery + 交互式
+  bring-up;bring-up 的推理仍在打磨。)*
 - **把一个 pack 降级成 [plugin](plugins.md)** 以实现一行改写重定向——front-matter 契约
   复用 `plugin` 词汇（`eval_contract` / `protected_paths`），应能几乎无返工地导出（与 2.2
   配套）。

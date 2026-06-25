@@ -133,6 +133,51 @@ def test_cli_add(cache: Path, tmp_path: Path) -> None:
     assert "still to do" in result.output
 
 
-def test_cli_add_rejects_bad_spec(tmp_path: Path) -> None:
-    result = CliRunner().invoke(app, ["benchmark", "add", "!!!", "--name", "x"])
+def test_cli_add_url_without_name_errors(cache: Path, tmp_path: Path) -> None:
+    # A URL/path spec skips discovery; without --name (and none to infer) it errors.
+    repo = _make_repo(tmp_path)
+    result = CliRunner().invoke(app, ["benchmark", "add", str(repo)])
     assert result.exit_code == 2
+
+
+def test_cli_add_query_path_brings_up(cache: Path, tmp_path: Path, monkeypatch) -> None:
+    # A natural-language request: discovery + bring-up are faked (no LLM/network), but the
+    # spine in between (acquire + scaffold) runs for real, and the original request +
+    # baseline plan must be threaded into bring-up.
+    from arbor.cli.commands import benchmark_cmd
+    from arbor.zoo import BringupResult, DiscoveryResult
+
+    repo = _make_repo(tmp_path)
+    zoo = tmp_path / "zoo"
+    captured: dict = {}
+
+    async def fake_discover(query, *, run_agent, work_dir, max_turns):
+        captured["query"] = query
+        return DiscoveryResult(
+            choice={"name": "demo", "source": {"kind": "git", "url": str(repo)},
+                    "metric": "accuracy, higher better", "baseline": "naive rag",
+                    "baseline_plan": {"source": "implement", "detail": "naive rag baseline"},
+                    "why": "fits"},
+            ok=True,
+        )
+
+    async def fake_bringup(pack_dir, *, run_agent, materials_dir=None, instruction="",
+                           baseline_plan=None, max_turns=40, eval_timeout=600):
+        captured["instruction"] = instruction
+        captured["plan"] = baseline_plan
+        return BringupResult(ok=True, ran=False, notes=["runnable draft ready"])
+
+    monkeypatch.setattr(benchmark_cmd, "discover", fake_discover)
+    monkeypatch.setattr(benchmark_cmd, "bringup", fake_bringup)
+
+    result = CliRunner().invoke(
+        app, ["benchmark", "add", "get me the WebThinker GPQA benchmark", "--yes",
+              "--dest", str(zoo)]
+    )
+    assert result.exit_code == 0, result.output
+    assert (zoo / "demo" / "README.md").exists()
+    assert captured["query"] == "get me the WebThinker GPQA benchmark"
+    # the user's original words reach bring-up (so a baseline can be implemented to them)
+    assert captured["instruction"] == "get me the WebThinker GPQA benchmark"
+    assert captured["plan"] == {"source": "implement", "detail": "naive rag baseline"}
+    assert "runnable draft ready" in result.output

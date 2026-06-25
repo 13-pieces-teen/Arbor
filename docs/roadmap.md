@@ -117,11 +117,14 @@ Still open:
 
 - **Grow the collection** to 3–5 high-quality, human-checked packs across distinct
   task shapes, using `algotune_knn` as the reference. Cap on quality, not count.
-- **`arbor benchmark add`** — semi-automatic conversion: the intake agent *drafts*
-  a Task Pack from a raw benchmark, gated behind the verifier and a human accept
-  step (draft-automatic, accept-verified — never auto-accepted). The
-  baseline-implementing agent stays separate from the loop that later optimizes it,
-  so evaluation isn't self-certifying. *(Designed; not yet built.)*
+- **`arbor benchmark add`** — semi-automatic conversion: from a one-line request the
+  agent finds the dataset, asks (on an interactive terminal) which dataset to use and
+  where the baseline comes from (harvest an existing one / implement the method you
+  described / find one online), and brings up a runnable draft — gated behind the
+  verifier and a human accept step (draft-automatic, accept-verified — never
+  auto-accepted). The baseline-implementing agent stays separate from the loop that
+  later optimizes it, so evaluation isn't self-certifying. *(Built: discovery +
+  interactive bring-up; bring-up reasoning still maturing.)*
 - **Lower a pack into a [plugin](plugins.md)** for one-line retargeting — the
   front-matter contract reuses the `plugin` vocabulary (`eval_contract` /
   `protected_paths`), so it should fall out with little rework (pairs with 2.2).

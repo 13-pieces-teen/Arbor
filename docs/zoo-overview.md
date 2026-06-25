@@ -12,8 +12,12 @@ one folder per benchmark.
   point Arbor at it and it begins optimizing.
 - **Onboard your own task.** If you have code but no runnable eval, one command adds the eval
   scaffolding.
-- **Collect new ones (in progress).** Have Arbor fetch a benchmark from GitHub / HuggingFace
-  and shape it into this format.
+- **Collect new ones (in progress).** Describe what you want in one line — name a work
+  ("get me the datasets WebThinker uses") or a goal ("I want to climb GPQA with a
+  self-consistency method"). An agent finds the dataset/benchmark, asks you which dataset to
+  use and where the baseline should come from (harvest an existing one, implement the method
+  you described, or find one online), acquires the data, and brings up a runnable draft. You
+  can also point it straight at a repo URL.
 
 ## What a benchmark contains
 
@@ -37,7 +41,7 @@ and repeat.
 | Run Arbor on a benchmark | copy it out of the repo, `git init`, run `arbor` inside it |
 | Verify a benchmark's structure | `arbor benchmark verify <dir>` |
 | Make your code a runnable benchmark | `arbor benchmark scaffold <dir>` |
-| Fetch a benchmark from GitHub / HF | `arbor benchmark add <url> --name <name>` |
+| Find & build a benchmark from a request | `arbor benchmark add "<request>"` (or a repo URL) |
 
 Running one:
 
@@ -51,8 +55,9 @@ arbor                                             # confirm the task, then it it
 
 - **Available:** the format, `verify`, `list`, `scaffold`, the `add` spine, and the first
   example benchmark, `algotune_knn`.
-- **In progress:** strengthening `add` (research the benchmark and bring its baseline up), and
-  adding more benchmarks.
+- **In progress:** strengthening `add` — from a one-line request, find the dataset, ask which
+  one and where the baseline comes from, and bring up a runnable draft — and adding more
+  benchmarks.
 
 For the exact format, see the [format reference](zoo.md); for the wider plan, see the
 [roadmap](roadmap.md).

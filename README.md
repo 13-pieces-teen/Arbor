@@ -290,6 +290,29 @@ In one 6-cycle run this drove the dev speedup from **1.01x → 7.77x** (held-out
 test **1.00x → 7.22x**). See [`examples/algotune_knn/README.md`](examples/algotune_knn/README.md)
 for the research contract and tuning knobs.
 
+### Collect a benchmark from a request (experimental)
+
+You don't have to assemble a benchmark by hand. `arbor benchmark add` turns a
+one-line request into a runnable **draft task**: it finds the dataset/benchmark and,
+on an interactive terminal, asks you **which dataset** to use and **where the
+baseline comes from** — harvest an existing implementation, implement the method you
+described, or find one online — then acquires the data and brings up a draft
+(baseline + eval + `README` + provenance). It does *not* force-run the eval; a real
+run may need your served model / API key.
+
+```bash
+# name a work, or give a goal + a method
+arbor benchmark add "get me the datasets WebThinker uses"
+arbor benchmark add "I want to climb GPQA with a self-consistency baseline"
+
+# or point straight at a repo / HF dataset (add --bringup to also build the baseline)
+arbor benchmark add https://github.com/owner/repo --name my-bench --bringup
+```
+
+Drafting is automated; acceptance stays human. `arbor benchmark verify <dir>`
+structurally checks a pack, and `arbor benchmark list` indexes the zoo. See the
+[benchmark zoo overview](docs/zoo-overview.md) for the format and the full flow.
+
 ---
 
 ## 🧠 How It Works
