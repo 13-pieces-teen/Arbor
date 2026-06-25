@@ -51,6 +51,12 @@ def run_command(
         help="Resume an interrupted run from its checkpoint (idea tree + message history) "
              "in the existing workspace/session, instead of starting fresh.",
     ),
+    continue_latest: bool = typer.Option(
+        False, "--continue", "-C",
+        help="Continue the most recent unfinished intake conversation in this directory "
+             "(like `claude -c`). Reloads the planning chat so you pick up where you left off. "
+             "(-c is --config; use -C or --continue.)",
+    ),
     workspace_dir: Path | None = typer.Option(
         None, "--workspace-dir",
         help=f"Session/artifact directory override. Default: <target>/{CONFIG_DIR_NAME}/sessions/<run_name>.",
@@ -243,6 +249,7 @@ def run_command(
                 starting_cwd=starting_cwd,
                 seed_message=instruction,
                 intake_max_turns=intake_max_turns,
+                continue_latest=continue_latest,
             ))
         except KeyboardInterrupt:
             typer.secho("\n^C — aborted before run started", fg=typer.colors.YELLOW, err=True)

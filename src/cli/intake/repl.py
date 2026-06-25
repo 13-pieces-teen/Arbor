@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 from typing import Callable, Iterable
 
@@ -30,6 +31,15 @@ from ...core.tools.bash import BashTool
 from ...core.tools.file_read import FileReadTool
 from ...core.tools.glob_tool import GlobTool
 from ...core.tools.grep import GrepTool
+from ...coordinator.checkpoint import seal_interrupted_tail
+from .conversation_store import (
+    ConversationRecord,
+    find_conversations,
+    latest_unfinished,
+    load_messages,
+    new_conversation,
+    save_conversation,
+)
 from .display import IntakeDisplay
 from .launch_tool import LaunchExperimentTool, LaunchPlan, LaunchState
 from .system_prompt import build_system_prompt
@@ -37,13 +47,14 @@ from ..resume_picker import ResumableSession
 
 
 _console = Console()
+log = logging.getLogger(__name__)
 
 
 # Single source of truth for slash commands.
 # (name, description) — the completer renders these, _handle_slash dispatches.
 SLASH_COMMANDS: list[tuple[str, str]] = [
     ("/help",  "show available commands"),
-    ("/resume", "resume a previous run"),
+    ("/resume", "resume a past conversation or run"),
     ("/plugin", "select plugin: /plugin <name> [profile]"),
     ("/skill", "manage skills: /skill load|unload <name...>"),
     ("/status", "show intake status"),
@@ -63,6 +74,7 @@ async def run_intake(
     seed_message: str | None,
     workspace_dir: Path | None = None,
     intake_max_turns: int = 30,
+    continue_latest: bool = False,
 ) -> LaunchPlan | ResumableSession | None:
     """Drive the intake REPL. Returns the launch outcome:
 
@@ -73,6 +85,11 @@ async def run_intake(
     `starting_cwd` is the directory the user invoked the CLI from. It is
     only a hint — the agent must confirm or correct it before launching.
     The intake workspace dir (tool persistence, etc.) lives next to it.
+
+    The conversation itself is auto-saved every turn under
+    ``<starting_cwd>/.arbor/conversations/`` so it can be continued later. With
+    ``continue_latest`` (``arbor --continue``) the newest unfinished
+    conversation there is reloaded and the chat picks up where it left off.
     """
     starting_cwd = starting_cwd.resolve()
 
@@ -117,6 +134,33 @@ async def run_intake(
 
     session = _build_session(starting_cwd, state=state)
 
+    # The conversation is auto-saved every turn so it can be resumed. On
+    # --continue, reload the newest unfinished conversation and keep chatting;
+    # otherwise start a fresh record (written lazily on the first save).
+    conv: ConversationRecord = new_conversation(starting_cwd)
+    if continue_latest:
+        prior = latest_unfinished(starting_cwd)
+        if prior is not None:
+            agent.messages = seal_interrupted_tail(load_messages(prior))
+            conv = prior
+            _console.print(
+                f"[green]Continuing your last conversation[/] "
+                f"[dim]({escape(prior.title) or prior.conv_id})[/]\n"
+            )
+            _print_resumed_history(agent.messages)
+        else:
+            _console.print(
+                "[yellow]No unfinished conversation to continue[/] "
+                "[dim]— starting fresh.[/]\n"
+            )
+
+    def _persist() -> None:
+        """Best-effort autosave; a failure must never break the chat."""
+        try:
+            save_conversation(conv, agent.messages, launched=state.launched)
+        except Exception as exc:  # pylint: disable=broad-exception-caught
+            log.debug("intake conversation save failed: %s", exc)
+
     # Seed message: if the user gave one on the CLI, feed it as the first user turn
     pending_user_input: str | None = seed_message
 
@@ -152,6 +196,12 @@ async def run_intake(
                 # The user picked a past run via /resume — hand it straight back
                 # so run_command resumes it instead of starting a fresh run.
                 return state.resume_target
+            if action == "conversation":
+                # The user picked a saved conversation: _handle_slash already
+                # reloaded it into the agent. Switch onward autosaves to that
+                # record and keep chatting in this same intake loop.
+                conv = state.resume_conversation
+                continue
             continue
 
         # Hand off to the agent under a compact display.
@@ -170,6 +220,10 @@ async def run_intake(
                 base_url=getattr(provider, "base_url", None),
             )
             continue
+
+        # Autosave the turn (records launched=True once a plan is fired, so a
+        # launched conversation is excluded from --continue).
+        _persist()
 
         # The agent prints its own messages via core/agent.py's _print_*
         # helpers, and it only fires LaunchExperiment after the user has
@@ -520,6 +574,85 @@ def _print_research_contract(plan: LaunchPlan) -> None:
     _console.print()
 
 
+def _visible_text(content: object) -> str:
+    """Human-readable text of a message's content, ignoring tool plumbing."""
+    if isinstance(content, str):
+        return content.strip()
+    if isinstance(content, list):
+        parts = [
+            b.get("text", "")
+            for b in content
+            if isinstance(b, dict) and b.get("type") in (None, "text") and isinstance(b.get("text"), str)
+        ]
+        return " ".join(p for p in parts if p).strip()
+    return ""
+
+
+def _print_resumed_history(messages: list[dict]) -> None:
+    """Replay a reloaded conversation so the user can see the prior exchange.
+
+    Renders user prompts and the agent's text replies; tool calls / results
+    carry no prose and are skipped. No-op for an empty history.
+    """
+    rendered = False
+    for m in messages:
+        text = _visible_text(m.get("content"))
+        if not text:
+            continue
+        if not rendered:
+            _console.print("[dim]──────── previous conversation ────────[/dim]")
+            rendered = True
+        role = m.get("role")
+        if role == "user":
+            _console.print(f"[dim]you ›[/dim] {escape(text)}")
+        elif role == "assistant":
+            _console.print(f"[cyan]arbor ›[/cyan] {escape(text)}")
+    if rendered:
+        _console.print("[dim]───────────────────────────────────────[/dim]\n")
+
+
+def _prompt_resume_any(
+    convs: list[ConversationRecord],
+    runs: list[ResumableSession],
+    *,
+    console: Console,
+) -> ConversationRecord | ResumableSession | None:
+    """Show conversations then runs as one numbered list; return the choice.
+
+    Returns the picked :class:`ConversationRecord` or :class:`ResumableSession`,
+    or ``None`` when the user starts fresh.
+    """
+    from ..resume_picker import _format_row, _humanize_age, _parse_iso
+
+    items: list[ConversationRecord | ResumableSession] = [*convs, *runs]
+    console.print()
+    if convs:
+        console.print("[bold cyan]Conversations[/] [dim](continue chatting)[/]")
+        for i, c in enumerate(convs, 1):
+            age = _humanize_age(_parse_iso(c.updated_at))
+            title = escape(c.title or "(no messages yet)")
+            console.print(
+                f"  [bold]{i}[/]  [cyan]{escape(c.conv_id)}[/]  [dim]{age}[/]  "
+                f"[dim]{c.turns} turn(s)[/]  [magenta]\\[chat][/]\n"
+                f"      [dim]{title}[/]"
+            )
+    if runs:
+        console.print("[bold cyan]Runs[/] [dim](replay the research engine)[/]")
+        for i, s in enumerate(runs, len(convs) + 1):
+            console.print(_format_row(i, s))
+    console.print()
+
+    while True:
+        answer = typer.prompt(
+            f"Start fresh, or resume one? [N / 1-{len(items)}]", default="N"
+        ).strip().lower()
+        if answer in ("", "n", "new"):
+            return None
+        if answer.isdigit() and 1 <= int(answer) <= len(items):
+            return items[int(answer) - 1]
+        console.print(f"[yellow]  enter N for a new chat, or 1-{len(items)} to resume[/]")
+
+
 def _handle_slash(
     line: str,
     agent: Agent,
@@ -535,32 +668,40 @@ def _handle_slash(
         for name, desc in SLASH_COMMANDS:
             _console.print(f"  [cyan]{name:<8}[/cyan] [dim]{desc}[/dim]")
     elif cmd == "/resume":
-        # List this project's past runs and let the user pick one to resume.
-        # Reuses the standalone picker; a chosen session is stashed on the
-        # shared state and the main loop returns it from run_intake.
-        from ..resume_picker import find_resumable_sessions, prompt_resume_choice
+        # List this project's past *conversations* and launched *runs* in one
+        # picker. A conversation is reloaded into the live agent (keep chatting);
+        # a run is handed back so run_command replays the orchestrator.
+        from ..resume_picker import find_resumable_sessions
 
-        sessions = (
+        convs = (
+            [c for c in find_conversations(starting_cwd) if not c.launched and c.turns > 0]
+            if starting_cwd else []
+        )
+        runs = (
             find_resumable_sessions(starting_cwd, include_subdirs=True)
             if starting_cwd else []
         )
-        if not sessions:
+        if not convs and not runs:
             where = escape(str(starting_cwd)) if starting_cwd else "this directory"
+            _console.print(f"[yellow]Nothing to resume[/] under [dim]{where}[/].")
             _console.print(
-                f"[yellow]No resumable runs found[/] under [dim]{where}[/]."
-            )
-            _console.print(
-                "  [dim]Resume is per-project: runs live in "
-                "[/dim][cyan].arbor/sessions/[/cyan][dim] under the project you "
-                "worked on.\n"
-                "  Launch [/dim][cyan]arbor[/cyan][dim] from inside (or just "
-                "above) that project, or start a new run by describing your "
-                "goal.[/dim]"
+                "  [dim]Conversations live in [/dim][cyan].arbor/conversations/[/cyan]"
+                "[dim] and launched runs in [/dim][cyan].arbor/sessions/[/cyan][dim], "
+                "per project. Start a new one by describing your goal.[/dim]"
             )
             return "continue"
-        chosen = prompt_resume_choice(sessions, console=_console)
+        chosen = _prompt_resume_any(convs, runs, console=_console)
         if chosen is None:
             return "continue"        # user declined (N) → stay in intake
+        if isinstance(chosen, ConversationRecord):
+            agent.messages = seal_interrupted_tail(load_messages(chosen))
+            state.resume_conversation = chosen
+            _console.print(
+                f"[green]Resumed conversation[/] "
+                f"[dim]({escape(chosen.title) or chosen.conv_id})[/]\n"
+            )
+            _print_resumed_history(agent.messages)
+            return "conversation"
         state.resume_target = chosen
         return "resume"
     elif cmd == "/status":

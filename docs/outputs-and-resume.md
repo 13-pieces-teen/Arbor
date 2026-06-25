@@ -41,6 +41,30 @@ Every experiment ran on its own git branch in an isolated worktree. Merged impro
 are on trunk; explored-but-unmerged ideas remain as branch refs you can inspect. During a
 run, `/branches` lists the explored branch refs and `/tree` prints the Idea Tree snapshot.
 
+## Saving & resuming the planning conversation
+
+The intake chat — what you do at the `arbor` prompt *before* a run launches — is itself
+saved every turn, so you can step away and pick it back up. Each conversation lives in its
+own directory under the launch folder:
+
+```text
+<cwd>/.arbor/conversations/<conv_id>/
+```
+
+with the message history (`messages.jsonl`) and a small `meta.json` (title, timestamps,
+turn count). Saving is best-effort and never interrupts the chat.
+
+Two ways back in:
+
+- **`arbor --continue`** (`-C`) — reload the most recent *unfinished* conversation and keep
+  chatting, like `claude -c`. (`-c` is already `--config`, so the short flag is `-C`.)
+- **`/resume`** inside intake — lists saved conversations (tagged `[chat]`) alongside
+  launched runs; pick a conversation to keep chatting, or a run to replay the engine.
+
+On resume the prior exchange is replayed to the terminal so you can see what was already
+said. Once a conversation launches a run it is recorded as launched and dropped from
+`--continue` — the run's own checkpoint (below) takes over.
+
 ## Resuming an interrupted run
 
 If a run is interrupted — you stopped it, the machine rebooted, a budget tripped — resume

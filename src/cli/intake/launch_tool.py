@@ -46,6 +46,10 @@ class LaunchState:
     # Set when the user runs `/resume` and picks a past session. Typed Any to
     # avoid importing resume_picker here; it holds a ``ResumableSession``.
     resume_target: Any = None
+    # Set when `/resume` picks a saved *conversation* (not a launched run): the
+    # chosen ``ConversationRecord``. The REPL reloads it into the live agent and
+    # keeps chatting, persisting onward saves to this same record.
+    resume_conversation: Any = None
 
     @property
     def launched(self) -> bool:

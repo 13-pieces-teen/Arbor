@@ -402,6 +402,7 @@ Day to day you only need `arbor`:
 | Command | What it does |
 | --- | --- |
 | `arbor` | Start an interactive research session. |
+| `arbor --continue` (`-C`) | Resume the most recent unfinished planning conversation in this directory (like `claude -c`). |
 | `arbor replay --demo` | Replay a bundled sample run in the live dashboard — no API key needed. Add `--html` for a shareable browser page. |
 | `arbor replay <session>` | Replay any past run's `events.jsonl` from its timeline (`--html` to export an interactive page). |
 | `arbor quickstart` | Get running fast with a free key (Gemini/Groq) or a local model (Ollama). |
